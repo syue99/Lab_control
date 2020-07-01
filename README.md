@@ -1,1 +1,2 @@
 # Lab_control
+This repo is the code for the lab control system of the lab. We use Labrad (https://sourceforge.net/p/labrad/wiki/Home/) as the base of our system. We also credit to Prof. Haffner (https://github.com/HaeffnerLab/Haeffner-Lab-LabRAD-Tools ; https://github.com/AMOLabRAD/AMOLabRAD/wiki) and Prof. Jayich (private repo for their pydux module) for the help. For any question, please contact ys3135@nyu.edu.
