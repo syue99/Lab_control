@@ -1,5 +1,7 @@
 # Lab_control
-This repo is the code for the lab control system of the lab. We use Labrad (https://sourceforge.net/p/labrad/wiki/Home/) as the base of our system. We also credit to Prof. Haffner (https://github.com/HaeffnerLab/Haeffner-Lab-LabRAD-Tools ; https://github.com/AMOLabRAD/AMOLabRAD/wiki) and Prof. Jayich (private repo for their pydux module) for the help. For any question, please contact ys3135@nyu.edu.
+This repo is the code for the lab control system of the lab. We use Labrad (https://sourceforge.net/p/labrad/wiki/Home/) as the base of our system. We also credit to Prof. Haffner (https://github.com/HaeffnerLab/Haeffner-Lab-LabRAD-Tools ; https://github.com/AMOLabRAD/AMOLabRAD/wiki) and Prof. Jayich (private repo for their pydux module) for the help. For any question, please contact ys3135@nyu.edu. The master branch is the labarad that is still under development and the ver0.0 branch is the first running ver. of labrad with pulser, pmt, realsimple grapher, and fitting modules. Please refer to the group presentation slides (07/07/20) in group wiki for more details. (Note that in vers. 0.0 there is more detailed instructions for setting up the enviroment in the documentation page, while in the master branch we will include new feartures in the documenation.
+
+
 
 ## Running labrad
 
