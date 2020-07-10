@@ -9,7 +9,7 @@ Basic operations like creating dataset, adding data points, and editing existing
 ```python
 import labrad
 cxn = labrad.connect()
-cxn.data_vault.new('Half-Life', [('x', 'in')], [('y','','in')]) ## creates a new,empty dataset called 'Half-Life-0000n' with parameters x and y. 
+cxn.data_vault.new('Half-Life', [('x', 'in')], [('y','','in')]) ## creates a new,empty dataset called 'Half-Life-0000n' with independent variable x and dependent variable y. 
 cxn.data_vault.add([[1,3],[2,4]]) ## add data points
 cxn.data_vault.open_appendable("00001 - Half-Life") ## open file in append mode
 cxn.data_vault.variables() ## list of variables with their units in the form of [(xVariableName,'unit'),('yVariableName','unit')]
