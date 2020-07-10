@@ -2,15 +2,6 @@
 This repo is the code for the lab control system of the lab. We use Labrad (https://sourceforge.net/p/labrad/wiki/Home/) as the base of our system. We also credit to Prof. Haffner (https://github.com/HaeffnerLab/Haeffner-Lab-LabRAD-Tools ; https://github.com/AMOLabRAD/AMOLabRAD/wiki) and Prof. Jayich (private repo for their pydux module) for the help. For any question, please contact ys3135@nyu.edu. The master branch is the labarad that is still under development and the ver0.0 branch is the first running ver. of labrad with pulser, pmt, realsimple grapher, and fitting modules. Please refer to the group presentation slides (07/07/20) in group wiki for more details. (Note that in vers. 0.0 there is more detailed instructions for setting up the enviroment in the documentation page, while in the master branch we will include new feartures in the documenation.
 
 
-
-## Running labrad
-
-in Linux-based systems,
-PATH-TO/scalabrad-0.5.0/bin/labrad starts the labrad server
-scalabrad-web-server-2.0.6/bin/labrad-web starts the labrad web interface which can be accessed at localhost:7667. 
-Note that a version of chrome<80 is required to run the current implementation of scalabrad-web. 
-
-
 ## Data-Vault
 Data-Vault server is responsible for storing the experiment data and provides a convenient way to add/modify datasets in the labrad environment. 
 To run the data-vault server, execute PATH-TO\pydux-master\lib\control\servers\data_vault\data_vault.py
