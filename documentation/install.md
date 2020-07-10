@@ -34,16 +34,13 @@ Download Github Desktop, log into our github group, in configure Git page enter 
 
 
 ### Step4: Finalize and run LabRAD Manager
-*Install [Java](https://www.java.com/en/download/) if not already installed. Current version of 2018/11/10 is Java 8 update 191. JDK (Java Development Kit) is not needed if you wonder about it.
-
-*Install Chromium (blue chrome)
+* Install [Java](https://www.java.com/en/download/) if not already installed. Current version of 2018/11/10 is Java 8 update 191. JDK (Java Development Kit) is not needed if you wonder about it.
+* Install Chromium (blue chrome)
 Install the Chromium from the environment branch/set-up. This is a version of old chrome that support the front-end of labrad (scalabrad_web) of current version(2.0.6). Normal browser can be used if the new version fix the compatability issue.
+* Run labrad manager and front-end by running the scalabrad.bat and scalabradweb.bat from the corresponding folders (in this repo). If there isn't any error message, open the chromium and try to access `localhost:7667`. Otherwise, look for the error message, which possibly is due to a wrong directory address leading to an non-exisiting Java folder. Try to fix the issue by reset the address in the bat file.
+* Run datavault.py, paravault.py, pulser.py.. by opening a new anaconda prompt and activate to code3 enviroment by running `conda activate code3` first and then `python \directory\to\file`. You should be good to go. Note that you might need to change configuration file in the config folder for pulser if you are connecting a new fpga. Some more detailed explanation of every module will be discussed in other pages in the documentaion.
 
-*Run labrad manager and front-end by running the scalabrad.bat and scalabradweb.bat from the corresponding folders (in this repo). If there isn't any error message, open the chromium and try to access `localhost:7667`. Otherwise, look for the error message, which possibly is due to a wrong directory address leading to an non-exisiting Java folder. Try to fix the issue by reset the address in the bat file.
-
-*Run datavault.py, paravault.py, pulser.py.. by opening a new anaconda prompt and activate to code3 enviroment by running `conda activate code3` first and then `python \directory\to\file`. You should be good to go. Note that you might need to change configuration file in the config folder for pulser if you are connecting a new fpga. Some more detailed explanation of every module will be discussed in other pages in the documentaion.
-
-##Linux based system
+## Linux based system
 Follow most of the Step2-4. Note in linux-based system, `PATH-TO/scalabrad-0.5.0/bin/labrad` starts the labrad server `scalabrad-web-server-2.0.6/bin/labrad-web` starts the labrad web interface which can be accessed at `localhost:7667`. And that a version of chrome<80 is required to run the current implementation of scalabrad-web.
 
 
