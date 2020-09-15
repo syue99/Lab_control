@@ -23,7 +23,7 @@ Download Github Desktop, log into our github group, in configure Git page enter 
 ### Step3: Install Python and related packages
 * You can just copy the enviroment backup from our lab NAS system if you want a running system quick. But otherwise, you can follow the steps below.
 * Download **Anaconda3**, and install it. During the install, **make sure that the option to Add Anaconda to my PATH environment variable is checked**, and it is installed in the user folder (`C:\Users\scientist\Anaconda3`).
-* Download [Build Tools for Visual Studio 2017](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017), and install it with only all components in Visual C++ (including the Windows SDK).
+* Download [Build Tools for Visual Studio 2019](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019), and install it with only all components in Visual C++ (including the Windows SDK).
 * After installation, create a new **python 3.6** environment in Anaconda3 called "code3". This can be done in Anaconda Navigator or via command line. [tutorial](https://conda.io/docs/user-guide/tasks/manage-environments.html) for details. Or you can type `conda create -n code3 python=3.6` in anaconda prompt
 * Open cmd and run `activate code3`.
 * Run `pip install pylabrad spinmob pycodestyle nose pyqt5 pyqtgraph pywin32 ok ipython matplotlib scipy numpy qt5reactor jupyter treedict==0.2.2 pyserial pyvisa sympy mcculw coverage Cython statsmodels pillow`.
