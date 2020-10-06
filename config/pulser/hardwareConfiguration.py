@@ -63,15 +63,15 @@ class hardwareConfiguration(object):
         '866DP': channelConfiguration(1, False, False, True, False),
         # Voltage reference for the output voltage of the breakout board
         'VoltageRef': channelConfiguration(2, False, False, False, True),
-        'TTL3': channelConfiguration(3, False, False, False, False),  # manual compatible
+        'TTL1': channelConfiguration(3, True, True, False, False),  # manual compatible
         # manual compatible
-        'MiniliteFlashlamp': channelConfiguration(4, False, False, False, False),
-        'MiniliteQSwitch': channelConfiguration(5, False, False, False, False),  # manual compatible
-        'ControlBoxInput': channelConfiguration(6, False, False, False, False),  # manual compatible
-        'TTL7': channelConfiguration(7, False, False, False, False),  # manual compatible
-        'TTL8': channelConfiguration(8, False, False, False, False),  # manual compatible
-        'OvenSwitch': channelConfiguration(9, False, False, False, False),  # manual compatible
-        'TTL10': channelConfiguration(10, False, False, False, False),  # manual compatible
+        'TTL2': channelConfiguration(4, True, True, False, False),
+        'TTL3': channelConfiguration(5, False, False, False, False),  # manual compatible
+        'TTL4': channelConfiguration(6, False, False, False, False),  # manual compatible
+        'TTL5': channelConfiguration(7, False, False, False, False),  # manual compatible
+        'TTL6': channelConfiguration(8, False, False, False, False),  # manual compatible
+        'TTL7': channelConfiguration(9, False, False, False, False),  # manual compatible
+        'TTL8': channelConfiguration(10, False, False, False, False),  # manual compatible
         'TTL11': channelConfiguration(11, False, False, False, False),  # manual compatible
         'TTL12': channelConfiguration(12, False, True, False, False),
         'TTL13': channelConfiguration(13, False, False, False, False),
@@ -103,8 +103,8 @@ class hardwareConfiguration(object):
     }
     # address, allowedfreqrange, allowedamplrange, frequency, amplitude, **args):
     ddsDict = {
-        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, 3.0), 225.0, -14.1),
-        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 100.0, -6.6),
+        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 71.649, -2),
+        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 100.0, -48.0),
         '468 Double Pass': ddsConfiguration(2, (0.0, 800.0), (-48.0, 3.0), 220.0, -48.0),
         '1079 Double Pass': ddsConfiguration(3, (0.0, 800.00), (-48.0, 3.0), 300.0, -48.0),
         '708 Double Pass': ddsConfiguration(4, (0.0, 800.0), (-48.0, 3.0), 200.0, -48.0),

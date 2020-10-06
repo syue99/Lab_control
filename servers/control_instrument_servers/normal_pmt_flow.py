@@ -216,7 +216,8 @@ class NormalPMTFlow(LabradServer):
         yield self.pulser.set_collection_time(self.collection_period, self.currentMode)
         yield self.pulser.set_mode(self.currentMode)
         if self.currentMode == 'Differential':
-            yield self._programPulserDiff()
+            pass
+            #yield self._programPulserDiff()
         if self.openDataSet is None:
             self.openDataSet = yield self.makeNewDataSet(self.saveFolder, self.dataSetName)
         self.recording.start(self.collection_period['s']/2.0)
@@ -233,7 +234,8 @@ class NormalPMTFlow(LabradServer):
     def dostopRecording(self):
         yield self.recording.stop()
         if self.currentMode == 'Differential':
-            yield self._stopPulserDiff()
+            pass
+            #yield self._stopPulserDiff()
 
     @setting(6, returns='b')
     def isRunning(self, c):
@@ -259,9 +261,11 @@ class NormalPMTFlow(LabradServer):
             yield self.recording.stop()
         yield self.pulser.set_collection_time(timelength, mode)
         if initrunning:
+        #revised by Fred to try to trigger PMT
             if mode == 'Differential':
-                yield self._stopPulserDiff()
-                yield self._programPulserDiff()
+                pass
+                #yield self._stopPulserDiff()
+                #yield self._programPulserDiff()
             self.recording.start(timelength['s']/2.0)
         otherListeners = self.getOtherListeners(c)
         self.onNewSetting(('timelength', str(timelength['s'])), otherListeners)
