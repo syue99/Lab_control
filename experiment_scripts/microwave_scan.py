@@ -36,20 +36,19 @@ class scan(experiment):
     def program_main_sequence(self,scantime = 10, scanfreq = 100):
         #unit in ms
         far_detuned = 5
-        doppler = 10
+        doppler = 1
         self.pulser.new_sequence()
         self.pulser.add_ttl_pulse('TTL2', WithUnit(0, 'ms'), WithUnit(far_detuned, 'ms'))
         self.pulser.add_ttl_pulse('TTL1', WithUnit(0, 'ms'), WithUnit(doppler, 'ms'))
         DDS = [('1092 Double Pass', WithUnit((doppler+1), 'ms'), WithUnit(scantime, 'ms'), WithUnit(scanfreq, 'MHz'), WithUnit(-2, 'dBm'), WithUnit(0.0, 'deg'), WithUnit(0, 'MHz'),WithUnit(0, 'dB'))]
         # program DDS
         self.pulser.add_dds_pulses(DDS)
-        self.pulser.add_ttl_pulse('TTL4', WithUnit(doppler+1+scantime, 'ms'), WithUnit(2, 'ms'))
-
+        self.pulser.add_ttl_pulse('ReadoutCount', WithUnit(0, 'ms'), WithUnit(0.5, 'ms'))
         self.pulser.program_sequence()    
     def initialize(self, cxn, context, ident):
         try:
             self.pulser = self.cxn.pulser
-            #self.pmt = self.cxn.normalpmtflow
+            self.pmt = self.cxn.normalpmtflow
             #NEED to be written somewhere else
             #self.pulser.amplitude("1092 Double Pass", WithUnit(0,"dBm"))
             #print('scanning at '+str(self.pulser.amplitude("422 Double Pass")))
@@ -63,12 +62,14 @@ class scan(experiment):
         self.pulser.switch_auto('TTL1')
         self.pulser.switch_auto('TTL2')
         self.pulser.switch_auto('TTL4')
-        self.pulser.start_number(100)
-        #count = self.pmt.get_next_counts("ON",270)
-        #count = np.array(count)[count < 1000]
-        avg_count = 100
+        self.pulser.start_number(10)
+        count = self.pmt.get_next_counts("ON",100)
         self.pulser.wait_sequence_done()
         self.pulser.stop_sequence() 
+        count = np.array(count)
+        avg_count = np.average(count)
+        readout = self.pulser.get_readout_counts()
+        print(count,len(readout),readout)
         #avg_count = np.average(count) 
         self.pulser.switch_manual('TTL1')
         self.pulser.switch_manual('TTL2')
