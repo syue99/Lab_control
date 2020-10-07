@@ -43,6 +43,7 @@ class hardwareConfiguration(object):
     maxSwitches = 1022
     resetstepDuration = 3  # duration of advanceDDS and resetDDS TTL pulses in units of timesteps
     # range for normal pmt counting, the minimum collect time could not be less than 0.001s.
+    # Fred change this to test it
     collectionTimeRange = (0.001, 5.0)
     sequenceTimeRange = (0.0, 85.0)  # range for duration of pulse sequence
     isProgrammed = False
@@ -102,9 +103,17 @@ class hardwareConfiguration(object):
         'TTL31': channelConfiguration(31, False, True, False, False),
     }
     # address, allowedfreqrange, allowedamplrange, frequency, amplitude, **args):
+    # Note here you must configure the correct number of DDS channel here, otherwise 
+    # the channel with the lowest channel number will get stuck while programming dds pulses
+    remoteChannels = {
+    }
     ddsDict = {
-        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 71.649, -2),
-        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 100.0, -48.0),
+        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),
+        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 25, -2.0),
+    }
+    '''ddsDict = {
+        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),
+        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 25, -48.0),
         '468 Double Pass': ddsConfiguration(2, (0.0, 800.0), (-48.0, 3.0), 220.0, -48.0),
         '1079 Double Pass': ddsConfiguration(3, (0.0, 800.00), (-48.0, 3.0), 300.0, -48.0),
         '708 Double Pass': ddsConfiguration(4, (0.0, 800.0), (-48.0, 3.0), 200.0, -48.0),
@@ -113,4 +122,4 @@ class hardwareConfiguration(object):
         'LF': ddsConfiguration(7, (0.0, 10.0), (-48.0, 3.0), 2.0, -48.0),
     }
     remoteChannels = {
-    }
+    }'''

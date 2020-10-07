@@ -45,8 +45,9 @@ class DDS(LabradServer):
                 # only send to hardware if the channel is on
                 yield self._setAmplitude(channel, amplitude)
             channel.amplitude = amplitude
-            self.notifyOtherListeners(c, (name, 'amplitude', channel.amplitude), self.on_dds_param)
         amplitude = WithUnit(channel.amplitude, 'dBm')
+        #Changed by Fred to fit the DDS control program
+        self.notifyOtherListeners(c, (name, 'amplitude', amplitude), self.on_dds_param)
         returnValue(amplitude)
 
     @setting(44, "Frequency", name='s', frequency=['v[MHz]'], returns=['v[MHz]'])
@@ -64,8 +65,9 @@ class DDS(LabradServer):
                 # only send to hardware if the channel is on
                 yield self._setFrequency(channel, frequency)
             channel.frequency = frequency
-            self.notifyOtherListeners(c, (name, 'frequency', channel.frequency), self.on_dds_param)
         frequency = WithUnit(channel.frequency, 'MHz')
+        #Changed by Fred to fit the DDS control program
+        self.notifyOtherListeners(c, (name, 'frequency', frequency), self.on_dds_param)
         returnValue(frequency)
 
     @setting(45, 'Add DDS Pulses', values=['*(sv[s]v[s]v[MHz]v[dBm]v[deg]v[MHz]v[dB])'])
@@ -104,6 +106,7 @@ class DDS(LabradServer):
                 self._checkRange('frequency', channel, freq)
                 self._checkRange('amplitude', channel, ampl)
             num = self.settings_to_num(channel, freq, ampl, phase, ramp_rate, amp_ramp_rate)
+            #print(channel.phase_coherent_model)
             if not channel.phase_coherent_model:
                 num_off = self.settings_to_num(channel, freq_off, ampl_off)
             else:
@@ -200,6 +203,7 @@ class DDS(LabradServer):
         self.ddsLock = True
         for name, channel in iteritems(self.ddsDict):
             buf = dds[name]
+            #print(name,channel,buf)
             yield self.program_dds_chanel(channel, buf)
 
     @inlineCallbacks
@@ -234,6 +238,7 @@ class DDS(LabradServer):
             yield self._setDDSRemote(channel, addr, buf)
 
     def _setDDSLocal(self, addr, buf):
+        #print(addr,buf)
         self.api.resetAllDDS()
         self.api.setDDSchannel(addr)
         self.api.programDDS(buf)

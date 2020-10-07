@@ -216,8 +216,8 @@ class api(object):
         """
         # add the initial padding
         prog = bytearray.fromhex(u'0000') + prog
-#         for i in range(len(prog)):
-#             print "prog dds",i,"=", prog[i]
+        #for i in range(len(prog)):
+        #    print ("prog dds",i,"=", prog[i])
         # pad to a multiple of 16 bytes
         prog_padded = self.padTo16(prog)
         # very important !!! second argument need to be 16. Don't change this.

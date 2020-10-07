@@ -20,7 +20,7 @@ from experiment import experiment
 parameter= {
     'RFpower':WithUnit(3,'dBm'),
     'DC':WithUnit(1.5,'V'),
-    'TicklingPow':WithUnit(-25,'dBm'),
+    'TicklingPow':WithUnit(-2,'dBm'),
     'number_of_ions':2,
     }
 
@@ -37,7 +37,7 @@ class scan(experiment):
         try:
             self.pulser = self.cxn.pulser
             #NEED to be written somewhere else
-            self.pulser.amplitude("422 Double Pass", WithUnit(-25,"dBm"))
+            self.pulser.amplitude("422 Double Pass", WithUnit(-2,"dBm"))
             print('scanning at '+str(self.pulser.amplitude("422 Double Pass")))
         except Exception as e:
             print(e)
@@ -80,9 +80,11 @@ class measure(experiment):
 
     def run(self, cxn, context):
         try:
-            count = self.pmt.get_next_counts("ON",5)
-            count = np.array(count)
-            avg_count = np.average(count)
+            #count = self.pmt.get_next_counts("ON",5)
+            #count = np.array(count)
+            #avg_count = np.average(count)
+            time.sleep(0.2)
+            avg_count = 10
             print("average counts from PMT:"+str(avg_count))
             return avg_count
         except Exception as e:
@@ -97,7 +99,7 @@ class measure(experiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = scan_experiment_1D_measure(scan, measure, parameter, 3.4, 3.55, 2, 'MHZ')
+    exprt = scan_experiment_1D_measure(scan, measure, parameter, 20, 25, 100, 'MHZ')
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 

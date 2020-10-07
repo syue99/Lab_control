@@ -167,8 +167,10 @@ class switchWidget(QtGui.QFrame):
         server = yield self.cxn.get_server('Pulser')
         yield server.signal__switch_toggled(SIGNALID, context = self.context)
         yield server.addListener(listener = self.followSignal, source = None, ID = SIGNALID, context = self.context)
-    
-    def followSignal(self, x, switchName, state):
+    #Revised by Fred to make it work 
+    def followSignal(self, x, message):
+        switchName = message[0]
+        state = message[1]
         if switchName not in self.d.keys(): return None
         if state == 'Auto':
             button = self.d[switchName]['AUTO']

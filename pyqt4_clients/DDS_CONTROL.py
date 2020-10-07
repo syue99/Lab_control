@@ -364,6 +364,7 @@ class DDS_CONTROL(QtGui.QFrame):
         chan, param, val = y
         if chan in self.widgets.keys():
             #this check is neeed in case signal comes in about a channel that is not displayed
+            print(chan, param, val)
             self.widgets[chan].setParamNoSignal(param, val)
 
     def closeEvent(self, x):
