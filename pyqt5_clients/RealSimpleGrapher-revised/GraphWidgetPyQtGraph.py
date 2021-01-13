@@ -11,6 +11,8 @@ import queue
 import numpy as np
 from numpy import random
 
+import GUIConfig
+
 class artistParameters():
     def __init__(self, artist, dataset, index, shown):
         self.artist = artist
@@ -45,8 +47,7 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         self.live_update_loop = LoopingCall(self.update_figure)
         self.live_update_loop.start(0)
 
-        colors = ['r', 'g', 'y', 'c', 'm', 'w','k']
-        self.colorChooser = itertools.cycle(colors)
+        self.colorChooser = itertools.cycle(GUIConfig.GLOBALCOLORS)
         self.initUI()
 
     @inlineCallbacks
@@ -132,13 +133,10 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         bottom_axis.setLabel(text=axis_labels[0])
 	   
     def getItemColor(self, color):
-        color_dict = {"r": QtGui.QColor(QtCore.Qt.red).lighter(130),
-                      "g": QtGui.QColor(QtCore.Qt.green),
-                      "y": QtGui.QColor(QtCore.Qt.yellow),
-                      "c": QtGui.QColor(QtCore.Qt.cyan),
-                      "m": QtGui.QColor(QtCore.Qt.magenta).lighter(120),
-                      "w": QtGui.QColor(QtCore.Qt.white),
-					  "k": QtGui.QColor(QtCore.Qt.black)}
+        color_dict = {}
+
+        for hexColor in GUIConfig.GLOBALCOLORS:
+            color_dict[hexColor] = QtGui.QColor(hexColor)
         return color_dict[color]
 
     def update_figure(self):

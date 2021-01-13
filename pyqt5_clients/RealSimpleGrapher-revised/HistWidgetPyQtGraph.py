@@ -6,7 +6,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.task import LoopingCall
 import itertools
 import queue
-
+import GUIConfig
 
 class artistParameters():
     def __init__(self, artist, dataset, index, shown):
@@ -31,18 +31,14 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
         self.vline_name = config.vline
         self.vline_param = config.vline_param
 
+        self.opacityhex = 'B2'
+        
         self.dataset_queue = queue.Queue(config.max_datasets)
 
         self.live_update_loop = LoopingCall(self.update_figure)
         self.live_update_loop.start(0)
 
-        colors = [(255, 0, 0, 80),
-                  (0, 255, 0, 80),
-                  (255, 255, 0, 80),
-                  (0, 255, 255, 80),
-                  (255, 0, 255, 80),
-                  (255, 255, 255, 80)]
-        self.colorChooser = itertools.cycle(colors)
+        self.colorChooser = itertools.cycle([color + self.opacityhex for color in GUIConfig.GLOBALCOLORS])
         self.initUI()
 
     @inlineCallbacks
@@ -87,15 +83,12 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
         self.pw.sigRangeChanged.connect(self.rangeChanged)
 
     def getItemColor(self, color):
+        color_dict = {}
 
-        color_dict = {(255, 0, 0, 80): QtGui.QColor(QtCore.Qt.red).lighter(130),
-                      (0, 255, 0, 80): QtGui.QColor(QtCore.Qt.green),
-                      (255, 255, 0, 80): QtGui.QColor(QtCore.Qt.yellow),
-                      (0, 255, 255, 80): QtGui.QColor(QtCore.Qt.cyan),
-                      (255, 0, 255, 80): QtGui.QColor(QtCore.Qt.magenta).lighter(120),
-                      (255, 255, 255, 80): QtGui.QColor(QtCore.Qt.white)}
-        return color_dict[color]
-        
+        for hexColor in GUIConfig.GLOBALCOLORS:
+            color_dict[hexColor + self.opacityhex] = QtGui.QColor(hexColor + self.opacityhex)
+        return color_dict[color + self.opacityhex]
+
     def update_figure(self):
         for ident, params in self.artists.items():
             if params.shown:

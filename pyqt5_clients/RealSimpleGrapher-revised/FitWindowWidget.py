@@ -186,4 +186,5 @@ class FitWindow(QtWidgets.QWidget):
 
 
     def closeEvent(self, event):
+        # if we want to keep the fit graph, we should comment out the below
         self.parent.parent.remove_artist(self.ident)

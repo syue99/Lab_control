@@ -3,6 +3,7 @@ from ParameterListWidget import ParameterList
 from DataVaultListWidget import DataVaultList
 from FitWindowWidget import FitWindow
 from PredictSpectrumWidget import PredictSpectrum
+import GUIConfig
 from GUIConfig import traceListConfig
 
 class TraceList(QtWidgets.QListWidget):
@@ -35,8 +36,8 @@ class TraceList(QtWidgets.QListWidget):
             foreground_color = self.parent.getItemColor(color)
             item.setForeground(foreground_color)
         else:
-            item.setForeground(QtGui.QColor(255, 255, 255))
-        item.setBackground(QtGui.QColor(0, 0, 0))
+            item.setForeground(QtGui.QColor(0, 0, 0))
+        item.setBackground(QtGui.QColor(255,255,255))
 
         item.setCheckState(QtCore.Qt.Checked)
         self.addItem(item)
@@ -82,15 +83,14 @@ class TraceList(QtWidgets.QListWidget):
             togglecolorsAction = menu.addAction('Toggle colors')
             fitAction = menu.addAction('Fit')
             selectColorMenu = menu.addMenu("Select color")
-            redAction = selectColorMenu.addAction("Red")
-            greenAction = selectColorMenu.addAction("Green")
-            yellowAction = selectColorMenu.addAction("Yellow")
-            cyanAction = selectColorMenu.addAction("Cyan")
-            magentaAction = selectColorMenu.addAction("Magenta")
-            whiteAction = selectColorMenu.addAction("White")
             removeAction = menu.addAction('Remove')
-            colorActionDict = {redAction:"r", greenAction:"g", yellowAction:"y", cyanAction:"c", magentaAction:"m", whiteAction:"w"}
-
+            colorActionDict = {}
+            for i in range(len(GUIConfig.GLOBALCOLORS)):
+                tabName = 'color' + str(i + 1)
+                tabColor = GUIConfig.GLOBALCOLORS[i]
+                colorAction = selectColorMenu.addAction(tabName)
+                colorActionDict[colorAction] = tabColor
+            #colorActionDict = {redAction:"r", greenAction:"g", yellowAction:"y", cyanAction:"c", magentaAction:"m", whiteAction:"w"}
             action = menu.exec_(self.mapToGlobal(pos))
             
             if action == parametersAction:
@@ -103,13 +103,17 @@ class TraceList(QtWidgets.QListWidget):
             if action == togglecolorsAction:               
                 # option to change color of line
                 new_color = next(self.parent.colorChooser)
-                self.parent.artists[ident].artist.setPen(new_color)
-                if self.parent.show_points:
-                    self.parent.artists[ident].artist.setData(pen = new_color, symbolBrush = new_color)
-                    self.changeTraceListColor(ident, new_color)
-                else:
-                    self.parent.artists[ident].artist.setData(pen = new_color)
-                    self.changeTraceListColor(ident, new_color)
+                try:
+                    if self.parent.show_points:
+                        self.parent.artists[ident].artist.setData(pen = new_color, symbolBrush = new_color)
+                        self.changeTraceListColor(ident, new_color)
+                    else:
+                        self.parent.artists[ident].artist.setData(pen = new_color)
+                        self.changeTraceListColor(ident, new_color)
+                except Exception as e:
+                    # histWidget here
+                    self.parent.artists[ident].artist.setBrush(new_color)
+                
 
             if action == fitAction:
                 dataset = self.parent.artists[ident].dataset
@@ -120,13 +124,16 @@ class TraceList(QtWidgets.QListWidget):
 
             if action in colorActionDict.keys():
                 new_color = colorActionDict[action]
-                self.parent.artists[ident].artist.setPen(new_color)
-                if self.parent.show_points:
-                    self.parent.artists[ident].artist.setData(pen = new_color, symbolBrush = new_color)
-                    self.changeTraceListColor(ident, new_color)
-                else:
-                    self.parent.artists[ident].artist.setData(pen = new_color)
-                    self.changeTraceListColor(ident, new_color)
+                try:
+                    if self.parent.show_points:
+                        self.parent.artists[ident].artist.setData(pen = new_color, symbolBrush = new_color)
+                        self.changeTraceListColor(ident, new_color)
+                    else:
+                        self.parent.artists[ident].artist.setData(pen = new_color)
+                        self.changeTraceListColor(ident, new_color)
+                except Exception as e:
+                    # histWidget here
+                    self.parent.artists[ident].artist.setBrush(new_color + self.parent.opacityhex)
 
             if action == removeAction:
                 self.parent.remove_artist(ident)
