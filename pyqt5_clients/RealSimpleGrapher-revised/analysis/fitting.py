@@ -7,10 +7,12 @@ from .fit_gaussian import Gaussian
 from .fit_linear import Linear
 from .fit_rabi import Rabi
 from .fit_bessel import Bessel
+from .fit_sincos import CosFit, CosSqFit, SinCosFit
+
 
 class FitWrapper():
 
-    models = ['Lorentzian', 'Gaussian', 'Rabi', 'Linear', 'Bessel']
+    models = ['Lorentzian', 'Gaussian', 'Rabi', 'Linear', 'Bessel', 'Cos', 'CosSq', 'SinCos']
 
     def __init__(self, dataset, index):
         self.dataset = dataset
@@ -23,8 +25,11 @@ class FitWrapper():
             'Gaussian': Gaussian,
             'Linear': Linear,
             'Rabi': Rabi,
-	    'Bessel': Bessel
-            }
+	        'Bessel': Bessel,
+            'Cos': CosFit,
+            'CosSq': CosSqFit,
+            'SinCos': SinCosFit,
+        }
         self.model = model_dict[model]()
 
     def getParameters(self):
