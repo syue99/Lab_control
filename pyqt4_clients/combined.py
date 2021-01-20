@@ -123,7 +123,7 @@ class combinedWidget(QtGui.QFrame):
 		server = yield self.cxn.get_server('Pulser')
 		if self.initialized:
 			yield server.signal__switch_toggled(SWITCHSIGNALID, context = self.context)
-			yield server.signal__switch_toggled(DDSSIGNALID, context = self.context)
+			yield server.signal__new_dds_parameter(DDSSIGNALID, context = self.context)
 			for name in self.d.keys():
 				self.setStateNoSignals(name, server)
 			for widget in self.widgets.values():
@@ -251,8 +251,8 @@ class combinedWidget(QtGui.QFrame):
 	def setupListeners(self):
 		server = yield self.cxn.get_server('Pulser')
 		yield server.signal__switch_toggled(SWITCHSIGNALID, context = self.context)
+		yield server.signal__new_dds_parameter(DDSSIGNALID, context = self.context)
 		yield server.addListener(listener = self.followSignalSwitches, source = None, ID = SWITCHSIGNALID, context = self.context)
-	   	# newly add
 		yield server.addListener(listener = self.followSignalDDS, source = None, ID = DDSSIGNALID, context = self.context)
 	
 	#Revised by Fred to make it work 
