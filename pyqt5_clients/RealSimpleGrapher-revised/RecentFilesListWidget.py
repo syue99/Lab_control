@@ -61,6 +61,7 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
     def initializeGUI(self):
         self.doubleClicked.connect(self.onDoubleclick)
         yield self.dv.cd('ScriptScanner')
+        #self.addItem('Refresh Recent Files')
         self.populate()
 
     @inlineCallbacks
@@ -72,7 +73,8 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         items = []
         dateCounter = 0
         dates = sorted(ls[0], key=functools.cmp_to_key(dateCompare))
-        while (len(items) < 10):
+        #print(dates[1])
+        while (len(items) < 9):
             yield self.dv.cd(dates[dateCounter])
             curItems = yield self.dv.dir()
             curItems = sorted(curItems[0], reverse=True)
@@ -82,15 +84,20 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
             for experimentData in curItems:
                 yield self.dv.cd(experimentData)
                 data = yield self.dv.dir()
-                datasetName = data[1][0]
-                datasetNameWTimeStamp = data[1][0].split(dates[dateCounter], 1)
-                timeStamp = datasetNameWTimeStamp[1]
-                datasetName = datasetNameWTimeStamp[0]
-                datasetNameBeautify = dates[dateCounter] + timeStamp + ': ' + datasetName 
-                items.append(datasetNameBeautify)
+                #avoid crashes when a time folder is empty
+                try:
+                    datasetName = data[1][0]
+                    datasetNameWTimeStamp = data[1][0].split(dates[dateCounter], 1)
+                    timeStamp = datasetNameWTimeStamp[1]
+                    datasetName = datasetNameWTimeStamp[0]
+                    datasetNameBeautify = dates[dateCounter] + timeStamp + ': ' + datasetName 
+                    items.append(datasetNameBeautify)
+                except:
+                    pass
                 yield self.dv.cd(1)
             yield self.dv.cd(1)
             dateCounter += 1
+            #print(len(items),dateCounter)
 
         self.addItems(items)
 
