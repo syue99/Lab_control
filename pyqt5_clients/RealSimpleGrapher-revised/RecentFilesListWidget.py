@@ -55,13 +55,17 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         self.cxn = yield connectAsync(name=socket.gethostname() + ' Data Vault Client')
         self.grapher = yield self.cxn.grapher
         self.dv = yield self.cxn.data_vault
+        self.filteredText = ''
         self.initializeGUI()
 
     @inlineCallbacks
     def initializeGUI(self):
         self.doubleClicked.connect(self.onDoubleclick)
         yield self.dv.cd('ScriptScanner')
-        #self.addItem('Refresh Recent Files')
+        self.populate()
+
+    def filter(self, filteredText=''):
+        self.filteredText = filteredText
         self.populate()
 
     @inlineCallbacks
@@ -69,12 +73,11 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         self.clear()
         # get the list of directories whose names are dates
         ls = yield self.dv.dir()
-        self.addItem('Refresh Recent Files')
         items = []
         dateCounter = 0
         dates = sorted(ls[0], key=functools.cmp_to_key(dateCompare))
         #print(dates[1])
-        while (len(items) < 9):
+        while (len(items) < 10 and dateCounter < len(dates)):
             yield self.dv.cd(dates[dateCounter])
             curItems = yield self.dv.dir()
             curItems = sorted(curItems[0], reverse=True)
@@ -91,7 +94,11 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
                     timeStamp = datasetNameWTimeStamp[1]
                     datasetName = datasetNameWTimeStamp[0]
                     datasetNameBeautify = dates[dateCounter] + timeStamp + ': ' + datasetName 
-                    items.append(datasetNameBeautify)
+                    if self.filteredText != '':
+                        if self.filteredText in datasetName:
+                            items.append(datasetNameBeautify)
+                    else:
+                        items.append(datasetNameBeautify)
                 except:
                     pass
                 yield self.dv.cd(1)
@@ -104,15 +111,12 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
     @inlineCallbacks
     def onDoubleclick(self, item):
         item = self.currentItem().text()
-        if item == 'Refresh Recent Files':
-            self.populate()
-        else:
-            path = yield self.dv.cd()
-            info = str(item).split(': ')
-            datetime = info[0].split('_', 1)
-            date = datetime[0]
-            timeStamp = datetime[1]
-            datasetName = info[1]+date+'_'+timeStamp
-            path.append(date)
-            path.append(timeStamp)
-            yield self.grapher.plot((path, datasetName), self.parent.name, False)
+        path = yield self.dv.cd()
+        info = str(item).split(': ')
+        datetime = info[0].split('_', 1)
+        date = datetime[0]
+        timeStamp = datetime[1]
+        datasetName = info[1]+date+'_'+timeStamp
+        path.append(date)
+        path.append(timeStamp)
+        yield self.grapher.plot((path, datasetName), self.parent.name, False)

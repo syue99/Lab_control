@@ -96,7 +96,19 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
 
         leftSideVerticalBox.addWidget(self.tracelist)
         leftSideVerticalBox.setStretch(0, 1.4)
-        leftSideVerticalBox.addWidget(RecentFilesListWidget(self))
+
+
+        searchBarlayout = QtWidgets.QHBoxLayout()
+        self.searchInput = QtWidgets.QLineEdit()
+        searchButton = QtWidgets.QPushButton('Filter')
+        searchButton.clicked.connect(self.filter)
+        searchBarlayout.addWidget(self.searchInput)
+        searchBarlayout.addWidget(searchButton)
+        leftSideVerticalBox.addLayout(searchBarlayout)
+        leftSideVerticalBox.setStretch(0, 0.5)
+
+        self.recentFilesListWidget = RecentFilesListWidget(self)
+        leftSideVerticalBox.addWidget(self.recentFilesListWidget)
         leftSideVerticalBox.setStretch(0, 1)
         
         leftSideWidget.setLayout(leftSideVerticalBox)
@@ -124,6 +136,8 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         self.pw.scene().sigMouseMoved.connect(self.mouseMoved)
         self.pw.sigRangeChanged.connect(self.rangeChanged)
 
+    def filter(self):
+        self.recentFilesListWidget.filter(self.searchInput.text())
         
     def _set_axes_font(self, font_size):
         font = QtGui.QFont()
