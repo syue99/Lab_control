@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from TraceListWidget import TraceList
+from RecentFilesListWidget import RecentFilesListWidget
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.task import LoopingCall
 import itertools
@@ -55,7 +56,7 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         self.tracelist = TraceList(self)
         self.pw = pg.PlotWidget()
         self._set_axes_font(20)
-		#self._set_axes_label(self.dataset)
+        #self._set_axes_label(self.dataset)
         if self.vline_name:
             self.inf = pg.InfiniteLine(movable=True, angle=90,
                                        label=self.vline_name + '{value:0.0f}',
@@ -82,16 +83,30 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         self.title = QtGui.QLabel(self.name)
         frame = QtGui.QFrame()
         splitter = QtGui.QSplitter()
-        splitter.addWidget(self.tracelist)
-        hbox = QtGui.QHBoxLayout()
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.title)
-        vbox.addWidget(self.pw)
-        vbox.addWidget(self.coords)
-        frame.setLayout(vbox)
+
+        # reorganized layout for recent files
+        leftSideWidget = QtWidgets.QWidget()
+        leftSideVerticalBox = QtGui.QVBoxLayout()
+        overallHbox = QtGui.QHBoxLayout()
+        graphVbox = QtGui.QVBoxLayout()
+        graphVbox.addWidget(self.title)
+        graphVbox.addWidget(self.pw)
+        graphVbox.addWidget(self.coords)
+        frame.setLayout(graphVbox)
+
+        leftSideVerticalBox.addWidget(self.tracelist)
+        leftSideVerticalBox.setStretch(0, 1.4)
+        leftSideVerticalBox.addWidget(RecentFilesListWidget(self))
+        leftSideVerticalBox.setStretch(0, 1)
+        
+        leftSideWidget.setLayout(leftSideVerticalBox)
+        splitter.addWidget(leftSideWidget)
         splitter.addWidget(frame)
-        hbox.addWidget(splitter)
-        self.setLayout(hbox)
+
+        overallHbox.addWidget(splitter)
+        self.setLayout(overallHbox)
+        # end reorganizing
+
         self.tracelist.itemChanged.connect(self.checkboxChanged)
         self.pw.plot([],[])
         vb = self.pw.plotItem.vb
@@ -111,27 +126,27 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
 
         
     def _set_axes_font(self, font_size):
-	    font = QtGui.QFont()
-	    font.setPixelSize(font_size)
-	    left_axis = self.pw.plotItem.getAxis("left")
-	    left_axis.tickFont = font
-	    left_axis.setWidth(font_size * 7)
-	    left_axis.setStyle(tickTextOffset=int(font_size/2))
-	    left_axis.setStyle(textFillLimits=[(0, 0.6), (2, 0.4),(4, 0.2), (6, 0.0)])
-	    bottom_axis = self.pw.plotItem.getAxis("bottom")
-	    bottom_axis.tickFont = font
-	    bottom_axis.setHeight(font_size * 2)
-	    bottom_axis.setStyle(tickTextOffset=int(font_size/2))
-	    bottom_axis.setStyle(textFillLimits=[(0, 0.6), (2, 0.4),(4, 0.2), (6, 0.0)])
-	
-    @inlineCallbacks	
+        font = QtGui.QFont()
+        font.setPixelSize(font_size)
+        left_axis = self.pw.plotItem.getAxis("left")
+        left_axis.tickFont = font
+        left_axis.setWidth(font_size * 7)
+        left_axis.setStyle(tickTextOffset=int(font_size/2))
+        left_axis.setStyle(textFillLimits=[(0, 0.6), (2, 0.4),(4, 0.2), (6, 0.0)])
+        bottom_axis = self.pw.plotItem.getAxis("bottom")
+        bottom_axis.tickFont = font
+        bottom_axis.setHeight(font_size * 2)
+        bottom_axis.setStyle(tickTextOffset=int(font_size/2))
+        bottom_axis.setStyle(textFillLimits=[(0, 0.6), (2, 0.4),(4, 0.2), (6, 0.0)])
+    
+    @inlineCallbacks    
     def set_axis_label(self,dataset):
         axis_labels = yield dataset.getAxesLabels()
         left_axis = self.pw.plotItem.getAxis("left")
         left_axis.setLabel(text=axis_labels[1])
         bottom_axis = self.pw.plotItem.getAxis("bottom")
         bottom_axis.setLabel(text=axis_labels[0])
-	   
+       
     def getItemColor(self, color):
         color_dict = {}
 
@@ -232,8 +247,8 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         for i, label in enumerate(labels):
             self.add_artist(label, dataset, i)
         self.set_axis_label(dataset)
-		
-	
+        
+    
     @inlineCallbacks
     def remove_dataset(self, dataset):
         labels = yield dataset.getLabels()

@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from TraceListWidget import TraceList
+from RecentFilesListWidget import RecentFilesListWidget
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.task import LoopingCall
 import itertools
@@ -57,18 +58,32 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
             self.inf.setPen(width=5.0)
         self.coords = QtWidgets.QLabel('')
         self.title = QtWidgets.QLabel(self.name)
-        frame = QtWidgets.QFrame()
-        splitter = QtWidgets.QSplitter()
-        splitter.addWidget(self.tracelist)
-        hbox = QtWidgets.QHBoxLayout()
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.title)
-        vbox.addWidget(self.pw)
-        vbox.addWidget(self.coords)
-        frame.setLayout(vbox)
+        frame = QtGui.QFrame()
+        splitter = QtGui.QSplitter()
+
+        # reorganized layout for recent files
+        leftSideWidget = QtWidgets.QWidget()
+        leftSideVerticalBox = QtGui.QVBoxLayout()
+        overallHbox = QtGui.QHBoxLayout()
+        graphVbox = QtGui.QVBoxLayout()
+        graphVbox.addWidget(self.title)
+        graphVbox.addWidget(self.pw)
+        graphVbox.addWidget(self.coords)
+        frame.setLayout(graphVbox)
+
+        leftSideVerticalBox.addWidget(self.tracelist)
+        leftSideVerticalBox.setStretch(0, 1.4)
+        leftSideVerticalBox.addWidget(RecentFilesListWidget(self))
+        leftSideVerticalBox.setStretch(0, 1)
+        
+        leftSideWidget.setLayout(leftSideVerticalBox)
+        splitter.addWidget(leftSideWidget)
         splitter.addWidget(frame)
-        hbox.addWidget(splitter)
-        self.setLayout(hbox)
+
+        overallHbox.addWidget(splitter)
+        self.setLayout(overallHbox)
+        # end reorganizing
+
         #self.legend = self.pw.addLegend()
         self.tracelist.itemChanged.connect(self.checkboxChanged)
         self.pw.plot([],[])
