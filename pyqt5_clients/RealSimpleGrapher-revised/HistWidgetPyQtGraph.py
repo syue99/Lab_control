@@ -32,7 +32,7 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
         self.vline_name = config.vline
         self.vline_param = config.vline_param
 
-        self.opacityhex = 'B2'
+        self.opacityhex = GUIConfig.HistOpacity
         
         self.dataset_queue = queue.Queue(config.max_datasets)
 

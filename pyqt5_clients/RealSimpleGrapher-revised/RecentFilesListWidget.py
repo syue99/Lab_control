@@ -2,6 +2,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from twisted.internet.defer import inlineCallbacks
 import socket
 from GUIConfig import traceListConfig
+from datetime import date
 
 import functools
 def dateCompare(d1, d2):
@@ -47,7 +48,9 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         self.parent = parent
         self.config = traceListConfig()
         self.setStyleSheet("background-color:%s;" % self.config.background_color)
+        self.addItem('Initializing... Be Patient')
         self.connect()
+        self.today = None
 
     @inlineCallbacks
     def connect(self):
@@ -69,16 +72,25 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         self.populate()
 
     @inlineCallbacks
+    def loadDates(self):
+        # get the list of directories whose names are dates
+        # if today's date not change, no need for repeated work
+        today = date.today()
+        today = today.strftime("%m/%d/%y")
+        if today != self.today:
+            self.today = today
+            ls = yield self.dv.dir()
+            self.dates = sorted(ls[0], key=functools.cmp_to_key(dateCompare))
+
+    @inlineCallbacks
     def populate(self):
         self.clear()
-        # get the list of directories whose names are dates
-        ls = yield self.dv.dir()
+        self.addItem('Filtering... Be Patient')
+        yield self.loadDates()
         items = []
         dateCounter = 0
-        dates = sorted(ls[0], key=functools.cmp_to_key(dateCompare))
-        #print(dates[1])
-        while (len(items) < 10 and dateCounter < len(dates)):
-            yield self.dv.cd(dates[dateCounter])
+        while (len(items) < 10 and dateCounter < len(self.dates)):
+            yield self.dv.cd(self.dates[dateCounter])
             curItems = yield self.dv.dir()
             curItems = sorted(curItems[0], reverse=True)
             if len(curItems) >= 10:
@@ -90,10 +102,10 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
                 #avoid crashes when a time folder is empty
                 try:
                     datasetName = data[1][0]
-                    datasetNameWTimeStamp = data[1][0].split(dates[dateCounter], 1)
+                    datasetNameWTimeStamp = data[1][0].split(self.dates[dateCounter], 1)
                     timeStamp = datasetNameWTimeStamp[1]
                     datasetName = datasetNameWTimeStamp[0]
-                    datasetNameBeautify = dates[dateCounter] + timeStamp + ': ' + datasetName 
+                    datasetNameBeautify = self.dates[dateCounter] + timeStamp + ': ' + datasetName 
                     if self.filteredText != '':
                         if self.filteredText in datasetName:
                             items.append(datasetNameBeautify)
@@ -105,12 +117,16 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
             yield self.dv.cd(1)
             dateCounter += 1
             #print(len(items),dateCounter)
-
+        if len(items) == 0:
+            items = ['No Result..., check upper/lower case']
+        self.clear()
         self.addItems(items)
 
     @inlineCallbacks
     def onDoubleclick(self, item):
         item = self.currentItem().text()
+        if 'No Result' in item:
+            return
         path = yield self.dv.cd()
         info = str(item).split(': ')
         datetime = info[0].split('_', 1)

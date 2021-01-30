@@ -49,6 +49,7 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         self.live_update_loop.start(0)
 
         self.colorChooser = itertools.cycle(GUIConfig.GLOBALCOLORS)
+        self.fitColorChooser = itertools.cycle(GUIConfig.GLOBALFITCOLORS)
         self.initUI()
 
     @inlineCallbacks
@@ -163,8 +164,9 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
        
     def getItemColor(self, color):
         color_dict = {}
-
         for hexColor in GUIConfig.GLOBALCOLORS:
+            color_dict[hexColor] = QtGui.QColor(hexColor)
+        for hexColor in GUIConfig.GLOBALFITCOLORS:
             color_dict[hexColor] = QtGui.QColor(hexColor)
         return color_dict[color]
 
@@ -195,13 +197,16 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
         no_points is an override parameter to the global show_points setting.
         It is to allow data fits to be plotted without points
         '''
-        new_color = next(self.colorChooser)
+        if not no_points:
+            new_color = next(self.colorChooser)
+        else:
+            new_color = next(self.fitColorChooser)
         ident = self._check_artist_exist(ident)
         if self.show_points and not no_points:
             line = self.pw.plot([], [], symbol='o', symbolBrush=self.getItemColor(new_color),
                                 name=ident, pen = self.getItemColor(new_color), connect=self.scatter_plot)
         else:
-            line = self.pw.plot([], [], pen = self.getItemColor(new_color), name = ident)
+            line = self.pw.plot([], [], pen = pg.mkPen(self.getItemColor(new_color), width=GUIConfig.FitLineWidth), name = ident)
         if self.grid_on:
             self.pw.showGrid(x=True, y=True)
         self.artists[ident] = artistParameters(line, dataset, index, True)

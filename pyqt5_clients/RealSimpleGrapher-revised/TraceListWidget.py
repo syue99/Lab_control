@@ -85,7 +85,8 @@ class TraceList(QtWidgets.QListWidget):
             selectColorMenu = menu.addMenu("Select color")
             removeAction = menu.addAction('Remove')
             colorActionDict = {}
-            for i in range(len(GUIConfig.GLOBALCOLORS)):
+            colorSet = GUIConfig.GLOBALCOLORS
+            for i in range(len(colorSet)):
                 tabName = 'color' + str(i + 1)
                 tabColor = GUIConfig.GLOBALCOLORS[i]
                 colorAction = selectColorMenu.addAction(tabName)
