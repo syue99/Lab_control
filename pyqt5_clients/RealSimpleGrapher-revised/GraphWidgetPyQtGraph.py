@@ -139,7 +139,12 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
 
     def filter(self):
         self.recentFilesListWidget.filter(self.searchInput.text())
-        
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Return:
+            self.filter()
+        event.accept()
+
     def _set_axes_font(self, font_size):
         font = QtGui.QFont()
         font.setPixelSize(font_size)
