@@ -18,11 +18,15 @@ timeout = 20
 from labrad.server import LabradServer, setting, Signal
 from twisted.internet.defer import inlineCallbacks
 from six import itervalues, iteritems
-
+from labrad import types as T, util
+import os
+import re
+import sys
 
 class ParameterVault(LabradServer):
     """Data Server for storing ongoing experimental parameters."""
-    name = "ParameterVault"
+    #FIXED BY FRED, chnage the name from ParameterVault to Parameter Vault
+    name = "Parameter Vault"
     registryDirectory = ['', 'Servers', 'Parameter Vault']
     onParameterChange = Signal(612512, 'signal: parameter change', '(ss)')
 
@@ -36,6 +40,7 @@ class ParameterVault(LabradServer):
         """Initialize a new context object."""
         self.listeners.add(c.ID)
 
+
     def expireContext(self, c):
         self.listeners.remove(c.ID)
 
@@ -47,8 +52,23 @@ class ParameterVault(LabradServer):
     @inlineCallbacks
     def load_parameters(self):
         # recursively add all parameters to the dictionary
-        yield self._addParametersInDirectory(self.registryDirectory, [])
-
+        try:
+            yield self._addParametersInDirectory(self.registryDirectory, [])
+        except:
+            try:
+            # FIXED BY FRED: make directory if do not have one, a bug that always show up in the first run
+                reg = self.client.registry
+                temp_path = ['', 'Servers']
+                reg.cd(temp_path)
+                reg.mkdir(self.name)
+                yield self._addParametersInDirectory(self.registryDirectory, [])
+            except Exception as E:
+                print()
+                print(E)
+                print()
+                print("Press [Enter] to continue...")
+                input()
+                sys.exit()                
     @inlineCallbacks
     def _addParametersInDirectory(self, topPath, subPath):
         yield self.client.registry.cd(topPath + subPath)
