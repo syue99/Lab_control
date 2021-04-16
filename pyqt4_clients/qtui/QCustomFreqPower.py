@@ -32,11 +32,11 @@ class TextChangingButton(QtGui.QPushButton):
     def setAppearance(self, down):
         if down:
             self.setText('I')
-            self.setPalette(QtGui.QPalette(QtCore.Qt.darkGreen))
+            self.setStyleSheet('QPushButton {background-color: #b1f2ff; color: black; border-style: outset; border-width: 1px;border-color: black;}')
         else:
             self.setText('O')
-            self.setPalette(QtGui.QPalette(QtCore.Qt.black))
-    
+            self.setStyleSheet('QPushButton {background-color: white; color: black; border-style: outset; border-width: 1px;border-color: black;}')
+
     def sizeHint(self):
         return QtCore.QSize(37, 26)
 

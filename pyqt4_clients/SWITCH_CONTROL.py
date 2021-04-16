@@ -59,7 +59,7 @@ class switchWidget(QtGui.QFrame):
         try:
             displayed = yield reg.get('display_channels', context = self.context)
         except self.Error as e:
-            if e.code == 21:
+            if e.code != 21:
                 #key error
                 yield reg.set('display_channels', all_names, context = self.context)
                 displayed = None
