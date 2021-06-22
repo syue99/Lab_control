@@ -31,6 +31,7 @@ class SerialServer(HardwareInterfaceServer):
     name = '%LABRADNODE%_serial'
     #@setting(1)
     def refresh_available_interfaces(self):
+        print("refreshing")
         if sys.platform.startswith('win32'):
             addresses = ['COM{}'.format(i) for i in range(1, 30)]
         else:
@@ -46,7 +47,7 @@ class SerialServer(HardwareInterfaceServer):
             else:
                 try:
                     ser = Serial(address)
-                    ser.setTimeout(0)
+                    ser.timeout = 0.5
                     ser.close()
                     self.interfaces[address] = ser
                     print ('{} available'.format(address))
@@ -121,8 +122,8 @@ class SerialServer(HardwareInterfaceServer):
         """Sends data over the port."""
         if not isinstance(data, str):
             data = ''.join(chr(x & 255) for x in data)
-        self.call_if_available('write', c, data)
-        return long(len(data))
+        self.call_if_available('write', c, bytes(data.encode()))
+        return len(data)
 
     @setting(11, data=['s: string', '*w: bytes', 'w: byte'], returns='w: num bytes sent')
     def write_line(self, c, data):
@@ -131,7 +132,7 @@ class SerialServer(HardwareInterfaceServer):
             data = ''.join(chr(x & 255) for x in data)
         data += '\r\n'
         self.call_if_available('write', c, data)
-        return long(len(data))
+        return len(data)
 
     @setting(12, n_bytes='w', returns='s')
     def read(self, c, n_bytes=None):
