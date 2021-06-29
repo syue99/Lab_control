@@ -114,10 +114,12 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
 
     def getItemColor(self, color):
         color_dict = {}
-
         for hexColor in GUIConfig.GLOBALCOLORS:
             color_dict[hexColor + self.opacityhex] = QtGui.QColor(hexColor + self.opacityhex)
-        return color_dict[color + self.opacityhex]
+        if color[-2:] != self.opacityhex: 
+            return color_dict[color + self.opacityhex]
+        else:
+            return color_dict[color]
 
     def update_figure(self):
         for ident, params in self.artists.items():
