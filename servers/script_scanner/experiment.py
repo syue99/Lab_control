@@ -7,7 +7,9 @@ from experiment_info import experiment_info
 
 
 class experiment(experiment_info):
-
+    #Fred: A field to add save raw_data feature for all experiments 
+    raw_data=[]
+    dirc=""
     def __init__(self, name=None, required_parameters=None, cxn=None,
                  min_progress=0.0, max_progress=100.0,):
         required_parameters = self.all_required_parameters()

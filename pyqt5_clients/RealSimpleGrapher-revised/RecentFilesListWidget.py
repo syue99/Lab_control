@@ -95,7 +95,6 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
             curItems = sorted(curItems[0], reverse=True)
             if len(curItems) >= 10:
                 curItems = curItems[:10]
-
             for experimentData in curItems:
                 yield self.dv.cd(experimentData)
                 data = yield self.dv.dir()
