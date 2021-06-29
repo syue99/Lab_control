@@ -68,7 +68,7 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
         self.populate()
 
     def filter(self, filteredText=''):
-        self.filteredText = filteredText
+        self.filteredText = filteredText.lower()
         self.populate()
 
     @inlineCallbacks
@@ -107,7 +107,7 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
                     datasetName = datasetNameWTimeStamp[0]
                     datasetNameBeautify = self.dates[dateCounter] + timeStamp + ': ' + datasetName 
                     if self.filteredText != '':
-                        if self.filteredText in datasetName:
+                        if self.filteredText in datasetName.lower():
                             items.append(datasetNameBeautify)
                     else:
                         items.append(datasetNameBeautify)
@@ -118,7 +118,7 @@ class RecentFilesListWidget(QtWidgets.QListWidget):
             dateCounter += 1
             #print(len(items),dateCounter)
         if len(items) == 0:
-            items = ['No Result..., check upper/lower case']
+            items = ['No Result..., check spelling']
         self.clear()
         self.addItems(items)
 

@@ -19,7 +19,7 @@ class traceListConfig():
 
 class graphConfig():
     def __init__(self, name, ylim=[0,1], isScrolling=False, max_datasets = 20,
-                 show_points = True, grid_on = False, scatter_plot='all', isImages=False,
+                 show_points = True, grid_on = False, scatter_plot='all', isImages=False, isCamera=False,
                  isHist=False, line_param=None, vline=None, vline_param=None, hline=None, hline_param=None):
         self.name = name
         self.ylim = ylim
@@ -30,6 +30,7 @@ class graphConfig():
         self.grid_on = grid_on
         self.scatter_plot = scatter_plot
         self.isImages = isImages
+        self.isCamera = isCamera
         self.isHist = isHist
         self.line_param = line_param
         self.vline = vline
@@ -50,6 +51,7 @@ class gridGraphConfig():
 tabs =[
     gridGraphConfig('current', [graphConfig('current', max_datasets = 5, grid_on=True), 0, 0]),
     gridGraphConfig('hist', [graphConfig('hist', max_datasets=5, isHist=True, show_points = False), 0, 0]),
+    gridGraphConfig('camera', [graphConfig('camera', max_datasets=1, show_points = False, isCamera=True), 0, 0]),
     gridGraphConfig('pmt', [graphConfig('pmt', ylim=[0,30], isScrolling=True, max_datasets = 1, show_points = False), 0, 0]),
     gridGraphConfig('spectrum', [graphConfig('spectrum'), 0, 0]),
     gridGraphConfig('rabi', [graphConfig('rabi'), 0, 0]),

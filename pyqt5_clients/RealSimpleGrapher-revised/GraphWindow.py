@@ -6,6 +6,7 @@ from PyQt5 import QtGui, QtWidgets
 import GUIConfig
 from GraphWidgetPyQtGraph import Graph_PyQtGraph as Graph
 from HistWidgetPyQtGraph import Hist_PyQtGraph as Hist
+from CameraWidgetGraph import CameraWidgetGraph as Camera
 from ScrollingGraphWidgetPyQtGraph import ScrollingGraph_PyQtGraph as ScrollingGraph
 from ImageWidget import imageWidget as ImageGraph
 from GridGraphWindow import GridGraphWindow
@@ -39,6 +40,11 @@ class GraphWindow(QtWidgets.QTabWidget):
                     continue
                 elif config.isHist:
                     g = Hist(config, reactor, self.cxn)
+                    self.graphDict[name] = g
+                    gli.append(g)
+                    continue
+                elif config.isCamera:
+                    g = Camera(config, reactor, self.cxn)
                     self.graphDict[name] = g
                     gli.append(g)
                     continue
