@@ -173,7 +173,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                     current_update = ds.updateCounter
                     if params.last_update < current_update:
                         params.last_update = current_update
-                        self.pw.setImage(ds.data)
+                        self.pw.setImage(np.asarray(ds.data))
                 except: pass
 
     def _check_artist_exist(self, ident):
@@ -194,6 +194,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         else:
             new_color = next(self.fitColorChooser)
         ident = self._check_artist_exist(ident)
+
         self.artists[ident] = artistParameters('', dataset, index, True)
         self.tracelist.addTrace(ident, new_color)
 

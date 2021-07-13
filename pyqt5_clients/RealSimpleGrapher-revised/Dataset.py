@@ -76,6 +76,8 @@ class Dataset(QtCore.QObject):
         variables = yield self.data_vault.variables(context = self.context)
         for i in range(len(variables[1])):
             labels.append(variables[1][i][1] + ' - ' + self.dataset_name)
+        if(len(variables[1]) == 0):
+            labels.append(self.dataset_name)
         print("Labels",labels)
         returnValue(labels)
 	

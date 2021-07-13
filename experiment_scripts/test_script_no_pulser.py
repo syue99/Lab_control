@@ -90,6 +90,7 @@ class scan(experiment):
         #you get in the set time scale in the program_main_sequence function
         #readout = self.pulser.get_readout_counts()
         readout = [0,1,2,3,4,5,6,7,8,9]
+        time.sleep(2.4)
         print("PMT actual readout counts:")
         print(readout)
         readout = np.array(readout)
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
     ###: you set the scan freqeuncy and data points needed here
-    exprt = scan_experiment_1D(scan, parameter, 165, 175, 10, 'MHz')
+    exprt = scan_experiment_1D(scan, parameter, 165, 175, 100, 'MHz')
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 
