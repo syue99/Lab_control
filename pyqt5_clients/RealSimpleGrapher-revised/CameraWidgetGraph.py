@@ -56,8 +56,8 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         self.tracelist = TraceList(self)
         # creating image view view object
         self.pw = pg.ImageView()
-        self.x = 10
-        self.data = np.zeros([self.x, 10])
+        self.height = 250
+        self.data = np.random.rand(256,256)
         self.pw.setImage(self.data)
         # self._set_axes_font(20)
         #self._set_axes_label(self.dataset)
@@ -99,8 +99,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         frame.setLayout(graphVbox)
 
         leftSideVerticalBox.addWidget(self.tracelist)
-        leftSideVerticalBox.setStretch(0, 1.4)
-
+        #leftSideVerticalBox.setStretch(0, 1.4)
 
         searchBarlayout = QtWidgets.QHBoxLayout()
         self.searchInput = QtWidgets.QLineEdit()
@@ -109,15 +108,25 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         searchBarlayout.addWidget(self.searchInput)
         searchBarlayout.addWidget(searchButton)
         leftSideVerticalBox.addLayout(searchBarlayout)
-        leftSideVerticalBox.setStretch(0, 0.5)
 
         self.recentFilesListWidget = RecentFilesListWidget(self)
         leftSideVerticalBox.addWidget(self.recentFilesListWidget)
-        leftSideVerticalBox.setStretch(0, 1)
         
+        maxHeightLayout = QtWidgets.QHBoxLayout()
+        self.maxHeightInput = QtWidgets.QLineEdit()
+        maxHeightButton = QtWidgets.QPushButton('Change Max Height')
+        maxHeightButton.clicked.connect(self.changeHeight)
+        self.maxHeightInput.setText(str(self.height))
+        maxHeightLayout.addWidget(self.maxHeightInput)
+        searchButton.clicked.connect(self.filter)
+        maxHeightLayout.addWidget(maxHeightButton)
+        leftSideVerticalBox.addLayout(maxHeightLayout)
+
         leftSideWidget.setLayout(leftSideVerticalBox)
         splitter.addWidget(leftSideWidget)
         splitter.addWidget(frame)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
 
         overallHbox.addWidget(splitter)
         self.setLayout(overallHbox)
@@ -129,9 +138,27 @@ class CameraWidgetGraph(QtWidgets.QWidget):
     def filter(self):
         self.recentFilesListWidget.filter(self.searchInput.text())
 
+    def changeHeight(self):
+        if(self.maxHeightInput.text()):
+            try:
+                self.height = int(self.maxHeightInput.text())
+            except:
+                pass
+        print(self.height)
+        for ident, params in self.artists.items():
+            if params.shown:
+                try:
+                    ds = params.dataset
+                    index = params.index
+                    current_update = ds.updateCounter
+                    params.last_update = current_update
+                    self.pw.setImage(self.process_data(ds.data))
+                except: pass
+
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
             self.filter()
+            self.changeHeight()
         event.accept()
 
     def _set_axes_font(self, font_size):
@@ -173,7 +200,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                     current_update = ds.updateCounter
                     if params.last_update < current_update:
                         params.last_update = current_update
-                        self.pw.setImage(np.asarray(ds.data))
+                        self.pw.setImage(self.process_data(ds.data))
                 except: pass
 
     def _check_artist_exist(self, ident):
@@ -201,7 +228,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
     def remove_artist(self, ident):
         try:
             artist = self.artists[ident].artist
-            self.pw.removeItem(artist)
+            self.pw.data = None
             self.tracelist.removeTrace(ident)
             self.artists[ident].shown = False
             try:
@@ -209,23 +236,24 @@ class CameraWidgetGraph(QtWidgets.QWidget):
             except KeyError:
                 pass
         except:
-            print("remove failed")
+            print("remove artist failed")
 
     def display(self, ident, shown):
         try:
             artist = self.artists[ident].artist
             if shown:
-                self.pw.addItem(artist)
+                self.pw.data = self.process_data(self.artists[ident].dataset.data)
                 self.artists[ident].shown = True
             else:
-                self.pw.removeItem(artist)
+                #cameraWidget should allow only one graph at a time
+                #self.pw.removeItem(artist)
                 #self.legend.removeItem(ident)
                 self.artists[ident].shown = False
         except KeyError:
             raise Exception('404 Artist not found')
 
     def checkboxChanged(self):
-        for ident, item in self.tracelist.trace_dict.items():
+        for ident, item in self.traceFlist.trace_dict.items():
             try:
                 if item.checkState() and not self.artists[ident].shown:
                     self.display(ident, True)
@@ -235,7 +263,6 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                 pass
 
     def rangeChanged(self):
-
         lims = self.pw.viewRange()
         self.pointsToKeep =  lims[0][1] - lims[0][0]
         self.current_limits = [lims[0][0], lims[0][1]]
@@ -252,10 +279,20 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         for i, label in enumerate(labels):
             self.add_artist(label, dataset, i)
 
-        self.pw.setImage(np.asarray(dataset.data))
+        # process data, so that it grows vertically downwards
+        self.pw.setImage(self.process_data(dataset.data))
         # self.set_axis_label(dataset)
         
-    
+    def process_data(self, data):
+        data = np.asarray(data)
+        rows, cols = data.shape
+        if rows < self.height:
+            data = np.vstack((data, [[255] * cols for _ in range(self.height - rows)]))
+        else:
+            data = data[rows - self.height:]
+        data = np.rot90(data, 1)
+        return data
+
     @inlineCallbacks
     def remove_dataset(self, dataset):
         labels = yield dataset.getLabels()

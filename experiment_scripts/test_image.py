@@ -25,9 +25,9 @@ class test_image(experiment):
         self.navigate_data_vault(cxn, self.parameter, context)
 
     def run(self, cxn, context):
-        for i in range(80):
-            readout = [0 * i,1 * i ,2 * i]
-            time.sleep(2.4)
+        for i in range(300):
+            readout = np.random.rand(256) * 256
+            time.sleep(0.1)
             print("PMT actual readout counts:")
             print(readout)
             readout = np.array(readout)
@@ -51,7 +51,7 @@ class test_image(experiment):
         for text in directory:
             self.dirc=self.dirc+text+'.dir/'
         dv.cd(directory, True, context=context)
-        dv.newmatrix(dataset_name, (3,3), 'f', context=context)
+        dv.newmatrix(dataset_name, (256,256), 'f', context=context)
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)

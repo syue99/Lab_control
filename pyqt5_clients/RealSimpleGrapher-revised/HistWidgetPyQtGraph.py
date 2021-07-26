@@ -148,6 +148,7 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
         tempdata = dataset.data[:,1]
         temphist,tempbins=np.histogram(tempdata,bins=range(50))
         dataset.data = np.vstack((tempbins[:-1],temphist)).T
+        print(dataset.data)
         self.artists[ident] = artistParameters(hist, dataset, index, True)
         self.pw.addItem(hist)
         self.tracelist.addTrace(ident, new_color)
