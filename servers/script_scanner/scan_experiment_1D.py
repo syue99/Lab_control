@@ -39,6 +39,15 @@ class scan_experiment_1D(experiment):
             if self.script.should_stop:
                 return
             if result is not None:
+                #revised by Fred to add the feature of storing raw data
+                #For now raw data is handled without going to the data_vault
+                #When the image data is handled properly, we should also add raw data into the image class
+                #the logic now is that result=[plotresult,raw] for plotresult=int/float, raw=np array
+                #if the result=plotresult, then nothing changed
+                if str(type(result))=="<class 'list'>":
+                    result[1] = np.insert(result[1],0,scan_value[self.units])
+                    self.raw_data.append(result[1]) 
+                    result = result[0]
                 cxn.data_vault.add([scan_value[self.units], result], context=context)
             self.update_progress(i)
             
@@ -50,8 +59,11 @@ class scan_experiment_1D(experiment):
         dv = cxn.data_vault
         local_time = localtime()
         dataset_name = self.name + strftime("%Y%b%d_%H%M_%S", local_time)
-        directory = ['', 'ScriptScanner']
+        directory = ['ScriptScanner']
         directory.extend([strftime("%Y%b%d", local_time), strftime("%H%M_%S", local_time)])
+        #need this directory to save raw_data
+        for text in directory:
+            self.dirc=self.dirc+text+'.dir/'
         dv.cd(directory, True, context=context)
         dv.new(dataset_name, [('Iteration', 'Arb')], [
                (self.script.name, 'Arb', 'Arb')], context=context)
@@ -64,4 +76,7 @@ class scan_experiment_1D(experiment):
         self.sc.script_set_progress(self.ident, progress)
 
     def finalize(self, cxn, context):
+        self.raw_data=np.array(self.raw_data)
+        #saves the raw_data into the same folder as the data vault data
+        np.savetxt("../servers/data_vault/__data__/"+self.dirc+"raw_data.csv", self.raw_data, delimiter=",", fmt="%s")
         self.script.finalize(cxn, context)

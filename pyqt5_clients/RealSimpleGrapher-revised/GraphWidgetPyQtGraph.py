@@ -140,6 +140,7 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
     def filter(self):
         self.recentFilesListWidget.filter(self.searchInput.text())
 
+
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
             self.filter()
@@ -185,6 +186,7 @@ class Graph_PyQtGraph(QtWidgets.QWidget):
                     if params.last_update < current_update:
                         x = ds.data[:,0]
                         y = ds.data[:,index+1]
+                        # print(ds.data)
                         params.last_update = current_update
                         params.artist.setData(x,y)
                 except: pass

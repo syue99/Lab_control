@@ -52,6 +52,7 @@ class Dataset(QtCore.QObject):
 
     @inlineCallbacks
     def getData(self):
+        # yield self.data_vault.add([1, 10, 1], context = self.context)
         Data = yield self.data_vault.get(100, context = self.context)
         if (self.data is None):
             yield self.accessingData.acquire()
@@ -75,6 +76,8 @@ class Dataset(QtCore.QObject):
         variables = yield self.data_vault.variables(context = self.context)
         for i in range(len(variables[1])):
             labels.append(variables[1][i][1] + ' - ' + self.dataset_name)
+        if(len(variables[1]) == 0):
+            labels.append(self.dataset_name)
         print("Labels",labels)
         returnValue(labels)
 	

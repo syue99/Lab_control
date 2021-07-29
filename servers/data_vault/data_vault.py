@@ -1192,7 +1192,7 @@ class DataVault(LabradServer):
         """
         session = self.getSession(c)
         dataset = session.openDataset(name)
-        c['dataset'] = dataset.name  # not the same as name; has number prefixed
+        c['dataset'] = dataset.name # not the same as name; has number prefixed
         c['filepos'] = 0
         c['commentpos'] = 0
         c['writing'] = False

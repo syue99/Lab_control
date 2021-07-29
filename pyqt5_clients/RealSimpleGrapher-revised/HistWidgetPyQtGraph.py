@@ -8,6 +8,7 @@ from twisted.internet.task import LoopingCall
 import itertools
 import queue
 import GUIConfig
+import numpy as np
 
 class artistParameters():
     def __init__(self, artist, dataset, index, shown):
@@ -114,10 +115,12 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
 
     def getItemColor(self, color):
         color_dict = {}
-
         for hexColor in GUIConfig.GLOBALCOLORS:
             color_dict[hexColor + self.opacityhex] = QtGui.QColor(hexColor + self.opacityhex)
-        return color_dict[color + self.opacityhex]
+        if color[-2:] != self.opacityhex: 
+            return color_dict[color + self.opacityhex]
+        else:
+            return color_dict[color]
 
     def update_figure(self):
         for ident, params in self.artists.items():
@@ -141,6 +144,11 @@ class Hist_PyQtGraph(QtWidgets.QWidget):
         '''
         new_color = next(self.colorChooser)
         hist = pg.PlotCurveItem([0,1],[1], stepMode=True, fillLevel=0, brush=new_color, pen=None)
+        #write by Fred to handle the actual histogram data, can add conditional logic to choose to excute it or not
+        tempdata = dataset.data[:,1]
+        temphist,tempbins=np.histogram(tempdata,bins=range(50))
+        dataset.data = np.vstack((tempbins[:-1],temphist)).T
+        print(dataset.data)
         self.artists[ident] = artistParameters(hist, dataset, index, True)
         self.pw.addItem(hist)
         self.tracelist.addTrace(ident, new_color)

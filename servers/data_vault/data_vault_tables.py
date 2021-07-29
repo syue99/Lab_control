@@ -487,6 +487,7 @@ class Image(object): ## UM TODO this should be all that we change
             self.filename = os.path.join(session.dir, filename + '.npy')
         elif (filetype=='.h5'):
             self.filename = os.path.join(session.dir, filename + '.h5')
+        print(self.filename)
         self.imageID = 0
         self.extension = filetype
         self.listeners = set()
@@ -505,7 +506,7 @@ class Image(object): ## UM TODO this should be all that we change
         ## dir should be in format d1/d2. Assumed that it stems from root. 
         ## UM TODO finish the function. create directory if it doesn't exist
         return group
-    def add_data(self, data,imagedir):
+    def add_data(self, data, imagedir):
         if (self.extension == '.npy'):
             fi = open(self.filename, 'ab')
             numpy.save(fi, data)
@@ -528,7 +529,7 @@ class Image(object): ## UM TODO this should be all that we change
                 atom = tables.Float32Atom() ## allows storing arrays
                 if (imagedir=='/'):
                     group = '/'
-                elif (fi.__contains__('/'+imagedir)):
+                elif (fi.__contains__('/'+imagedir)): ## cheks whether group exists
                     group = '/'+imagedir
                 else:
                 ## create node
@@ -549,6 +550,8 @@ class Image(object): ## UM TODO this should be all that we change
             else: ## keep opening till last image
                 print("image_array function")
                 print(self.imageID)
+                print(imagedir)
+                
                 nodedirList = fi.list_nodes(imagedir) ## list of all images in the directry
                 print("length",len(nodedirList))
                 nodedir = nodedirList[self.imageID] ## choose the current image path
@@ -1038,7 +1041,7 @@ class NumpyDataset(Dataset):
     def addData(self, data):
         if self.independents:
             varcount = len(self.independents) + len(self.dependents)
-        if self.matrixcolumns:
+        elif self.matrixcolumns:
             varcount = self.matrixcolumns
         # reshape single row
         if len(data.shape) == 1:
@@ -1390,19 +1393,17 @@ class DataVault(LabradServer):
 
 	## UM making a new function to open h5files
     @setting(23, filename='s',imagename='s',imagedir='s',rowrange='*i',returns='*2v')
-    def open_h5image(self, c, filename, imagename, imagedir='/',rowrange=[None,None]):
-        print("h5 image function works")
+    def open_image(self, c, filename, imagename, imagedir='/',rowrange=[None,None], filetype='.h5'):
+        print("h5/npy image function working")
         session = self.getSession(c)
-        image = Image(session, filename, '.h5')
+        image = Image(session, filename, filetype)
         if imagename=='': imagearray = image.get_image_array(None,imagedir,rowrange)
         else: imagearray = image.get_image_array(imagename,imagedir,rowrange)
         ## emulate these functions
         #dataset = self.getDataset(c)
         #data, c['filepos'] = dataset.getData(limit, c['filepos'])
-        return(imagearray)
-        
-        
-       
+        return(imagearray)   
+
     @setting(24, filename='s',limit='w', startOver='b', rowrange='*i', returns='*3v')
     def stream_h5image(self, c,filename, limit=None, startOver=True, rowrange=[None,None]):
         """Gets data from the current dataset.
