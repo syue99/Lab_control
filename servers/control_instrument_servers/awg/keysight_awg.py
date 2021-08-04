@@ -54,7 +54,10 @@ class keysightAWGServer(LabradServer):
     @setting(1, "Amplitude", channel='w', amplitude='v[V]', returns='')
     def amplitude(self, c, channel=None, amplitude=None):
         """Gets or sets the amplitude of the named channel or the selected channel."""
-        self.awg.channelAmplitude(channel, amplitude["V"])
+        if abs(amplitude["V"]) < hardwareConfiguration.channel_amp_thres[channel-1]:
+            self.awg.channelAmplitude(channel, amplitude["V"])
+        else:
+            print("the amp is bigger than the set threshold")
 
     @setting(2, "Frequency", channel='w', freq='v[MHz]', returns='')
     def frequency(self, c, channel=None, freq=None):
