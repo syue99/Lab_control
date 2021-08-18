@@ -109,7 +109,7 @@ class hardwareConfiguration(object):
     }
     ddsDict = {
         '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),
-        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, 3.0), 25, -2.0),
+        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, -6.0), 340, -9.0),
     }
     '''ddsDict = {
         '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),
