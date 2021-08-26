@@ -114,8 +114,8 @@ class keysightAWGServer(LabradServer):
         self.awg.channelAmplitude(channel, 0)
         self.awg.channelWaveShape(channel, 1)
 
-    @setting(7, "MS AM", channel='w', deviationGain='v[V]', carrier_freq='v[MHz]', omega='v[MHz]', delta='v[MHz]', returns='')
-    def MS_am(self, c, channel=None, Robust_gate=True, deviationGain=None, carrier_freq=None, omega=None, delta=None):
+    @setting(7, "MS AM", channel='w', Robust_gate='w', deviationGain='v[V]', carrier_freq='v[MHz]', omega='v[MHz]', delta='v[MHz]', returns='')
+    def MS_am(self, c, channel=None, Robust_gate=None, deviationGain=None, carrier_freq=None, omega=None, delta=None):
         """Using the Amplitude modulation to do MS gate\n
         channel (int): channel number\n
         Robust_gate (Boolean): if we want robust gate or normal MS\n
@@ -124,21 +124,30 @@ class keysightAWGServer(LabradServer):
         omega (Hz): secular freq to locate the freq of blue and red sideband\n
         delta (Hz): detuning from the sideband. (Base detuning in the robust gate)\n
         """
-        file_name = "waveform/Robust_gate_omega"+str(omega["MHz"])+"MHz_delta_"+str(delta["MHz"])+"MHz.csv"
-        try:
-            wf = _np.loadtxt(file_name,delimiter=',')
-        except:
-            pt = _np.linspace(0,16666*2-1,16666*2)
-            wf = 0
-            #calculated r, ref: NYU wiki Robust gate investigation
-            r = [4*_np.sqrt(2/57),-5*_np.sqrt(3/38),7/_np.sqrt(114)]
-            #picked mode
-            n = [2,3,7]
-            for i in range(0,3):
-            #note here the unit is in MHz
-                wf += r[i]*_np.sin(2*_np.pi*(omega["MHz"]-n[i]*delta["MHz"])*pt/self.nor)
-            wf = wf/_np.sum(_np.abs(r))
-            wf.tofile(file_name,sep=',',format='%10.16f')
+        if Robust_gate==1:
+            file_name = "waveform/Robust_gate_omega"+str(omega["MHz"])+"MHz_delta_"+str(delta["MHz"])+"MHz.csv"
+            try:
+                wf = _np.loadtxt(file_name,delimiter=',')
+            except:
+                pt = _np.linspace(0,16666*2-1,16666*2)
+                wf = 0
+                #calculated r, ref: NYU wiki Robust gate investigation
+                r = [4*_np.sqrt(2/57),-5*_np.sqrt(3/38),7/_np.sqrt(114)]
+                #picked mode
+                n = [2,3,7]
+                for i in range(0,3):
+                #note here the unit is in MHz
+                    wf += r[i]*_np.sin(2*_np.pi*(omega["MHz"]-n[i]*delta["MHz"])*pt/self.nor)
+                wf = wf/_np.sum(_np.abs(r))
+                wf.tofile(file_name,sep=',',format='%10.16f')
+        else:
+            file_name = "waveform/MS_gate_omega"+str(omega["MHz"])+"MHz_delta_"+str(delta["MHz"])+"MHz.csv"
+            try:
+                wf = _np.loadtxt(file_name,delimiter=',')
+            except:
+                pt = _np.linspace(0,16666*2-1,16666*2)
+                wf = _np.sin(2*_np.pi*(omega["MHz"]-delta["MHz"])*pt/self.nor)
+                wf.tofile(file_name,sep=',',format='%10.16f')
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.modulationAmplitudeConfig(channel,1,deviationGain["V"])  
         self.awg.channelFrequency(channel, carrier_freq["Hz"])
