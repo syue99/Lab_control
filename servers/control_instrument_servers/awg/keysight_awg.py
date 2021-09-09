@@ -19,7 +19,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 import labrad.units as _u
 import numpy as _np
-
+from scipy.fftpack import ifft,fft, rfft, irfft
 import sys 
 try:
     sys.path.append('C:\Program Files\Keysight\SD1\Libraries\Python') 
@@ -28,9 +28,9 @@ except:
     print("No keysight API found, plz install SD1 software or check the directory")
 
 sys.path.append('../../../config/awg/')
-
 from awgConfiguration import hardwareConfiguration
-
+sys.path.append('utility/')
+from mode_calculation import Axialmodes
 
 SERVERNAME = 'keysight_awg'
 
@@ -154,7 +154,7 @@ class keysightAWGServer(LabradServer):
         self.awg.channelAmplitude(channel, 0)
         self.awg.channelWaveShape(channel, 1)
 
-    @setting(8, "sideband cooling", channel='w', amplitude='v[V]', carrier_freq='v[MHz]', cm_freq='v[MHz]', n='w', returns='')
+    @setting(8, "multi order sideband cooling", channel='w', amplitude='v[V]', carrier_freq='v[MHz]', cm_freq='v[MHz]', n='w', returns='')
     def sb_cooling(self, c, channel=None, amplitude=None, carrier_freq=None, cm_freq=None, n=None):
         """Using the direct AWG output to generate multitone sideband cooling pulse\n
         channel (int): channel number\n
@@ -173,6 +173,10 @@ class keysightAWGServer(LabradServer):
             #note here the unit is in MHz
                 wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-cm_freq["MHz"]*i)*pt/self.nor)
             wf = wf/n
+            #USE FFT TO BANDPASS THE SIGNAL, NOT USED ANYMORE
+            #wffft = rfft(wf)
+            #wffft[int(4*16666/(self.nor/carrier_freq["MHz"])):]=0
+            #wf = irfft(wffft)           
             wf.tofile(file_name,sep=',',format='%10.16f')
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
@@ -180,8 +184,38 @@ class keysightAWGServer(LabradServer):
             self.awg.channelAmplitude(channel, amplitude["V"])
         else:
             raise Exception("the amp is bigger than the set threshold")
+
+    @setting(9, "multi ion sideband cooling", channel='w', amplitude='v[V]', carrier_freq='v[MHz]', cm_freq='v[MHz]', n='w', returns='')
+    def multi_ion_sb_cooling(self, c, channel=None, amplitude=None, carrier_freq=None, cm_freq=None, n=None):
+        """Using the direct AWG output to generate multitone sideband cooling pulse for axial modes for multi-ions\n
+        channel (int): channel number\n
+        amplitudes (Volts): the amplitude of MS\n
+        carrier_freq (Hz): the transition AOM freq\n
+        cm_freq (Hz): center of mass freq to locate the freq of blue and red sideband\n
+        n (int): number of ions cool\n
+        """
+        file_name = "waveform/multi_ion_sideband_cooling_carrier_"+str(carrier_freq["MHz"])+"MHz_cmfreq_"+str(cm_freq["MHz"])+"MHz_"+str(n)+"order.csv"
+        try:
+            wf = _np.loadtxt(file_name,delimiter=',')
+        except:
+            pt = _np.linspace(0,16666*2-1,16666*2)
+            wf = 0
+            modes = Axialmodes(n,cm_freq["MHz"])
+            #print(modes)
+            for i in modes:
+            #note here the unit is in MHz
+                wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-i)*pt/self.nor)
+            wf = wf/n       
+            wf.tofile(file_name,sep=',',format='%10.16f')
+        self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
+        self.awg.channelWaveShape(channel, 6)
+        if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
+            self.awg.channelAmplitude(channel, amplitude["V"])
+        else:
+            raise Exception("the amp is bigger than the set threshold")
+
             
-    @setting(9, "stop AM", channel='w')
+    @setting(10, "stop AM", channel='w')
     def am_stop(self, c, channel=None, deviationGain=0):
         """Shut off am settings after one finished am"""
         self.awg.modulationAmplitudeConfig(channel,0,deviationGain)  
