@@ -145,7 +145,8 @@ class keysightAWGServer(LabradServer):
             try:
                 wf = _np.loadtxt(file_name,delimiter=',')
             except:
-                pt = _np.linspace(0,16666*2-1,16666*2)
+                pt = _np.linspace(0,int(self.nor*100/(omega["MHz"]-delta["MHz"]))-1,int(self.nor*100/(omega["MHz"]-delta["MHz"]))*2)
+                #pt = _np.linspace(0,16666*2-1,16666*2)
                 wf = _np.sin(2*_np.pi*(omega["MHz"]-delta["MHz"])*pt/self.nor)
                 wf.tofile(file_name,sep=',',format='%10.16f')
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
