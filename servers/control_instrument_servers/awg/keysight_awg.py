@@ -200,13 +200,13 @@ class keysightAWGServer(LabradServer):
             wf = _np.loadtxt(file_name,delimiter=',')
         except:
             pt = _np.linspace(0,16666*2-1,16666*2)
-            wf = 0
-            modes = Axialmodes(n,cm_freq["MHz"])
+            modes = Axialmodes(n,cm_freq["MHz"])  
+            wf = 1.5*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0])*pt/self.nor)
             #print(modes)
-            for i in modes:
+            for i in modes[1:]:
             #note here the unit is in MHz
                 wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-i)*pt/self.nor)
-            wf = wf/n       
+            wf = wf/(n+0.5)       
             wf.tofile(file_name,sep=',',format='%10.16f')
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
