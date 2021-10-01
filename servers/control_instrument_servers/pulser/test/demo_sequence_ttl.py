@@ -11,12 +11,12 @@ with labrad.connect() as cxn:
     pulser.new_sequence()
     channels = pulser.get_channels()
     channel_names = [chan[0] for chan in channels]
-    DDS = [('422 Double Pass', WithUnit((1), 'ms'), WithUnit(1, 'ms'), WithUnit(1, 'MHz'), WithUnit(-15.6, 'dBm'), WithUnit(0.0, 'deg'), WithUnit(0, 'MHz'),WithUnit(0, 'dB'))]
+    DDS = [('422 Double Pass', WithUnit(1, 'ms'), WithUnit(1, 'ms'), WithUnit(100, 'MHz'), WithUnit(-15.6, 'dBm'), WithUnit(0.0, 'deg'), WithUnit(0, 'MHz'),WithUnit(0, 'dB'))]
         # program DDS
     pulser.add_dds_pulses(DDS)
-    for i in range(3):
+    #for i in range(3):
     #pulser.add_ttl_pulse('TTL1', WithUnit(0, 'ms'), WithUnit(2, 'ms'))
-        pulser.add_ttl_pulse('TTL3', WithUnit(20*i, 'ms'), WithUnit(10, 'ms'))
+    #    pulser.add_ttl_pulse('TTL3', WithUnit(20*i, 'ms'), WithUnit(10, 'ms'))
     #pulser.add_ttl_pulse('TTL5', WithUnit(5, 'ms'), WithUnit(300, 'us'))
 
 

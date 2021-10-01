@@ -31,6 +31,7 @@ sys.path.append('../../../config/awg/')
 from awgConfiguration import hardwareConfiguration
 sys.path.append('utility/')
 from mode_calculation import Axialmodes
+from gatedict import gatedict
 
 SERVERNAME = 'keysight_awg'
 
@@ -56,6 +57,7 @@ class keysightAWGServer(LabradServer):
         self.channel_list = hardwareConfiguration.channel_list
         self.channelfreq = hardwareConfiguration.channel_freq
         self.channelamp = hardwareConfiguration.channel_amp
+        self.coherent_channel = hardwareConfiguration.coherent_channel
         slot = hardwareConfiguration.slot
         self.awg=keysightSD1.SD_AOU()
         moduleID = self.awg.openWithSlot(model, chassis, slot)
@@ -65,6 +67,8 @@ class keysightAWGServer(LabradServer):
                 self.awg.channelFrequency(i, self.channelfreq[i-1]["Hz"])
                 self.awg.channelAmplitude(i, self.channelamp[i-1]["V"])
                 self.awg.channelWaveShape(i, 1)
+                #set trigger s.t. the coherent operation channel listen to the external trigger's rising edge
+                self.awg.AWGtriggerExternalConfig(self.coherent_channel, 0, 3, 0)
         else:
             print(moduleID)
             raise Exception("could not connect to AWG, check the Error code above") 
@@ -219,7 +223,53 @@ class keysightAWGServer(LabradServer):
     @setting(10, "stop AM", channel='w')
     def am_stop(self, c, channel=None, deviationGain=0):
         """Shut off am settings after one finished am"""
-        self.awg.modulationAmplitudeConfig(channel,0,deviationGain)  
+        self.awg.modulationAmplitudeConfig(channel,0,deviationGain)
+
+    @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(v,v,s)')
+    #this might be done using multithreads to speed up
+    def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None):
+        #first we get total time for the sequence: in units of pi time(2.5us)+ n* 1cycle of 125MHz time (8ns) for n number of gates
+        #we need to make sure that the start time is a multiple of 8ns, which is a multiple of 1/312.5 of pi time
+        #time_nor at full sample rate: 1 or 2ns for every point
+        gate_time_nor = 2504/(1000/self.nor)
+        cycle_time_nor = 8/(1000/self.nor)
+        #we add every 4 cycles after a pulse to wait for the awg clean up the signal
+        total_time = (gate_list[-1][0]+gate_list[-1][1])*gate_time_nor+len(gate_list)*4*cycle_time_nor
+        #create the wf array with the total time, this can be much faster than np.concat/np.append
+        wf = _np.zeros(int(total_time))
+        #we need a time_counter to make sure there is no overlap
+        time_counter = 0
+        for gate_index in range(len(gate_list)):
+            gate_start,gate_duration,gate_type = gate_list[gate_index]
+            gate_name = gate_type+"_"+str(gate_duration)+"pi_time"
+            #normalize gate time and gate start time
+            gate_start = int(gate_start*gate_time_nor+gate_index*4*cycle_time_nor)
+            gate_duration = int(gate_duration*gate_time_nor+4*cycle_time_nor)
+            if gate_start >= time_counter:
+                time_counter = gate_start+gate_duration
+            else:
+                raise Exception("gate sequence time not specifying correclty")
+            try:
+                wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+gate_name+".npy")
+            except:
+                pt = _np.linspace(0,gate_duration-1,gate_duration)
+                #now we need to make the gate 
+                gate = gate_type.split("_")
+                if len(gate)>1:
+                    gate_phi = int(gate[1])/180*_np.pi
+                    #print(gate_phi)
+                    gate = gate[0]
+                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
+                else:
+                    gate = gate[0]
+                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
+                _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
+        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=0, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
+        self.awg.channelWaveShape(channel, 6)
+        if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
+            self.awg.channelAmplitude(channel, amplitude["V"])
+        else:
+            raise Exception("the amp is bigger than the set threshold")       
         
 if __name__ == "__main__":
     from labrad import util
