@@ -23,11 +23,64 @@ class test_image(experiment):
 
     def initialize(self, cxn, context, ident):
         self.navigate_data_vault(cxn, self.parameter, context)
+        
+    def get_kinetic_external(self, cxn, kinetic_number=10):
+        identify_exposure = WithUnit(0.001, 's')
+        start_x = 1
+        stop_x = 200
+        start_y = 1
+        stop_y = 16
+
+        horizontalBinning, verticalBinning = 2, 2
+        image_region = (horizontalBinning, verticalBinning, start_x, stop_x, start_y, stop_y)
+
+        pixels_x = (stop_x - start_x + 1)
+        pixels_y = (stop_y - start_y + 1)
+
+        cam = cxn.andor_server
+
+        cam.abort_acquisition()
+        initial_exposure = cam.get_exposure_time()
+        cam.set_exposure_time(identify_exposure)
+        initial_region = cam.get_image_region()
+        cam.set_image_region(*image_region)
+        cam.set_acquisition_mode('Kinetics')
+        cam.set_number_kinetics(kinetic_number)
+
+        cam.set_trigger_mode('External')
+        cam.start_acquisition()
+        print('waiting, needs to get TTLs to proceed with each image')
+
+        proceed = cam.wait_for_kinetic()
+        while not proceed:
+            proceed = cam.wait_for_kinetic()
+        print('proceeding to analyze')
+
+        image = np.array(cam.get_acquired_data(kinetic_number))
+        print(image.shape, image.dtype, max(image))
+        image = image.astype(np.int16)
+        print(image.shape, image.dtype, max(image))
+        image = np.reshape(image, (kinetic_number, pixels_y//verticalBinning, pixels_x//horizontalBinning))
+        np.save("images.npy", image)
+        
+        avg_image = np.mean(image, axis=0)
+
+        
+        cxn.data_vault.add(avg_image, context=context)
+        
+        cam.set_trigger_mode('Internal')
+        cam.set_exposure_time(initial_exposure)
+        cam.set_image_region(initial_region)
+        cam.start_live_display()
+
 
     def run(self, cxn, context):
-        for i in range(300):
-            readout = np.random.rand(256) * 256
-            time.sleep(0.1)
+        
+        # self.get_kinetic_external(cxn)
+        
+        for i in range(100):
+            readout = np.random.rand(8, 100) * 256
+            time.sleep(0.5)
             print("PMT actual readout counts:")
             print(readout)
             readout = np.array(readout)
@@ -51,7 +104,7 @@ class test_image(experiment):
         for text in directory:
             self.dirc=self.dirc+text+'.dir/'
         dv.cd(directory, True, context=context)
-        dv.newmatrix(dataset_name, (256,256), 'f', context=context)
+        dv.newmatrix(dataset_name, (8,100), 'f', context=context)
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)

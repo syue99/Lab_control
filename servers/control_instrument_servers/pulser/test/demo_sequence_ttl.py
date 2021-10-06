@@ -29,6 +29,6 @@ with labrad.connect() as cxn:
     sp = SequencePlotter(np.asarray(ttl),dds_, np.array(channels))
     sp.makePlot()
     #print(counters)
-    pulser.start_number(1)
+    pulser.start_number(10)
     pulser.wait_sequence_done()
     pulser.stop_sequence()
