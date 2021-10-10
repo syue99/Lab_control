@@ -56,6 +56,12 @@ class AndorVideo(QtGui.QWidget):
         plt.showAxis('top')
         plt.hideAxis('bottom')
         plt.setAspectLocked(True)
+        colors =[
+            (0, 0, 0),
+            (0, 255, 0)
+        ]
+        cm = pg.ColorMap(pos=_np.linspace(0.0, 1.0, 2), color=colors)
+        self.img_view.setColorMap(cm)
         layout.addWidget(self.img_view, 0, 0, 1, 6)
         self.img_view.getHistogramWidget().setHistogramRange(0, 1000)
         exposure_label = QtGui.QLabel("Exposure")
@@ -226,7 +232,6 @@ class AndorVideo(QtGui.QWidget):
     def live_update(self):
         data = yield self.server.getMostRecentImage(None)
         image_data = _np.reshape(data, (self.pixels_y, self.pixels_x))
-
         self.img_view.setImage(
             image_data.transpose(), autoRange=False, autoLevels=False,
             pos=[self.startx, self.starty], scale=[self.binx, self.biny],

@@ -24,7 +24,7 @@ class test_image(experiment):
     def initialize(self, cxn, context, ident):
         self.navigate_data_vault(cxn, self.parameter, context)
         
-    def get_kinetic_external(self, cxn, kinetic_number=10):
+    def get_kinetic_external(self, cxn, kinetic_number=100):
         identify_exposure = WithUnit(0.001, 's')
         start_x = 1
         stop_x = 200
@@ -76,19 +76,19 @@ class test_image(experiment):
 
     def run(self, cxn, context):
         
-        # self.get_kinetic_external(cxn)
+        self.get_kinetic_external(cxn)
         
-        for i in range(100):
-            readout = np.random.rand(8, 100) * 256
-            time.sleep(0.5)
-            print("PMT actual readout counts:")
-            print(readout)
-            readout = np.array(readout)
-            avg_count = np.average(readout)
-            print("averaged readout counts")
-            print(avg_count)
-            print(' ')
-            cxn.data_vault.add(readout, context=context)
+        # for i in range(100):
+            # readout = np.random.rand(8, 100) * 256
+            # time.sleep(0.5)
+            # print("PMT actual readout counts:")
+            # print(readout)
+            # readout = np.array(readout)
+            # avg_count = np.average(readout)
+            # print("averaged readout counts")
+            # print(avg_count)
+            # print(' ')
+            # cxn.data_vault.add(readout, context=context)
         return 0
             
             
@@ -104,7 +104,7 @@ class test_image(experiment):
         for text in directory:
             self.dirc=self.dirc+text+'.dir/'
         dv.cd(directory, True, context=context)
-        dv.newmatrix(dataset_name, (8,100), 'f', context=context)
+        dv.newmatrix(dataset_name, (80,100), 'f', context=context)
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)
