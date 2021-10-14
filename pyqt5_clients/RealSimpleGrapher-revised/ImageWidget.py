@@ -6,6 +6,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.task import LoopingCall
 import itertools
 import queue
+import numpy as _np
 
 
 class imageWidget(QtWidgets.QWidget):
@@ -25,6 +26,7 @@ class imageWidget(QtWidgets.QWidget):
     def initUI(self):
         self.plt = plt = pg.PlotItem()
         self.imv = pg.ImageView(view = self.plt)
+
         plt.showAxis('top')
         plt.hideAxis('bottom')
         plt.setAspectLocked(True)

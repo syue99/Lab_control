@@ -68,10 +68,28 @@ class test_image(experiment):
         
         cxn.data_vault.add(avg_image, context=context)
         
-        cam.set_trigger_mode('Internal')
-        cam.set_exposure_time(initial_exposure)
+        # cam.set_trigger_mode('Internal')
+        # cam.set_exposure_time(initial_exposure)
+        # cam.set_image_region(initial_region)
+        # cam.start_live_display()
+        
+        Doppler_cooling_exposure = WithUnit(0.03, 's')
+        cam.set_exposure_time(Doppler_cooling_exposure)
         cam.set_image_region(initial_region)
-        cam.start_live_display()
+        cam.set_acquisition_mode('Kinetics')
+        cam.set_number_kinetics(1)
+
+        cam.set_trigger_mode('External')
+        cam.start_acquisition()
+        print('waiting, needs to get TTLs for doppler cooled image')
+
+        proceed = cam.wait_for_kinetic()
+        while not proceed:
+            proceed = cam.wait_for_kinetic()
+        print('proceeding to analyze')
+
+        image = np.array(cam.get_acquired_data(1))
+        
 
 
     def run(self, cxn, context):

@@ -463,6 +463,12 @@ class AndorServer(LabradServer):
             yield self.wait(0.050)
         returnValue(False)
 
+    @setting(29, "Get Kinetic cycle time", returns='v')
+    def Get_Kinetic_cycle_time(self, c):
+        """Waits until the given number of kinetic images are completed."""
+        self.camera.get_acquisition_timings()
+        return(self.camera.info.kinetic_cycle_time)
+    
     @setting(31, "Get Detector Dimensions", returns='ww')
     def get_detector_dimensions(self, c):
         print('acquiring: {}'.format(self.get_detector_dimensions.__name__))

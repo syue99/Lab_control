@@ -54,10 +54,23 @@ class CameraWidgetGraph(QtWidgets.QWidget):
     @inlineCallbacks
     def initUI(self):
         self.tracelist = TraceList(self)
-        # creating image view view object
-        self.pw = pg.ImageView()
-        self.height = 250
-        self.data = np.random.rand(256,256)
+        self.pw = pg.ImageView(view = pg.ViewBox(enableMenu=True, lockAspect=4.0))
+        self.height = 50
+        self.data = np.ones((200,50))*255
+        self.data[0,0] = 0
+        #self.data = np.random.rand(200,100)
+        #print(self.data)
+        colors =[
+            (0, 0, 0),
+            (0, 255, 0),
+            (255, 255, 255),
+        ]
+        cm = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3), color=colors)
+        self.pw.setColorMap(cm)
+        #size
+        #self.pw.resize(100,100)
+
+        
         self.pw.setImage(self.data)
         # self._set_axes_font(20)
         #self._set_axes_label(self.dataset)
@@ -82,7 +95,11 @@ class CameraWidgetGraph(QtWidgets.QWidget):
             init_value = yield self.get_init_hline()
             self.inf.setValue(init_value)
             self.inf.setPen(width=5.0)
-
+            
+        self.pw2 = pg.PlotWidget()
+        #size
+        #self.pw2.resize(2,2)
+        
         self.coords = QtGui.QLabel('')
         self.title = QtGui.QLabel(self.name)
         frame = QtGui.QFrame()
@@ -94,13 +111,16 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         overallHbox = QtGui.QHBoxLayout()
         graphVbox = QtGui.QVBoxLayout()
         graphVbox.addWidget(self.title)
+        graphVbox.addWidget(self.pw2)
         graphVbox.addWidget(self.pw)
+        
         graphVbox.addWidget(self.coords)
         frame.setLayout(graphVbox)
 
         leftSideVerticalBox.addWidget(self.tracelist)
         #leftSideVerticalBox.setStretch(0, 1.4)
 
+        
         searchBarlayout = QtWidgets.QHBoxLayout()
         self.searchInput = QtWidgets.QLineEdit()
         searchButton = QtWidgets.QPushButton('Filter')
@@ -145,6 +165,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
             except:
                 pass
         print(self.height)
+        print(self.pw.getView().getAspectRatio())
         for ident, params in self.artists.items():
             if params.shown:
                 try:
@@ -201,7 +222,14 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                     if params.last_update < current_update:
                         params.last_update = current_update
                         self.pw.setImage(self.process_data(ds.data))
-                except: pass
+                except:
+                    pass
+                x = np.linspace(0,len(ds.data)-1,len(ds.data))
+                
+                collapsed_data = np.sum(ds.data,axis=1)/len(ds.data)
+                self.pw2.clear()
+                line = self.pw2.plot(x, collapsed_data, symbol='o')
+
 
     def _check_artist_exist(self, ident):
         if ident in self.artists.keys():
@@ -224,6 +252,13 @@ class CameraWidgetGraph(QtWidgets.QWidget):
 
         self.artists[ident] = artistParameters('', dataset, index, True)
         self.tracelist.addTrace(ident, new_color)
+        
+        collapsed_data = np.sum(dataset.data,axis=1)/len(dataset.data)
+        #print(collapsed_data)
+        self.pw2.clear()
+        line = self.pw2.plot(np.linspace(0,len(dataset.data)-1,len(dataset.data)), collapsed_data)
+
+
 
     def remove_artist(self, ident):
         try:
@@ -280,6 +315,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
             self.add_artist(label, dataset, i)
 
         # process data, so that it grows vertically downwards
+        #self.process_data(dataset.data)
         self.pw.setImage(self.process_data(dataset.data))
         # self.set_axis_label(dataset)
         

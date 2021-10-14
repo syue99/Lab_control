@@ -11,7 +11,7 @@ class AndorConfig(object):
     trigger_mode = 'Internal'
     exposure_time = 0.100 #seconds
     binning = [1, 1] #numbers of pixels for horizontal and vertical binning
-    image_path = ('C:\\Users\\funin\\Desktop')
+    image_path = ('C:\\Users\\Lab User\\Desktop')
     save_in_sub_dir = True
     save_format = "tsv"
     save_header = True
