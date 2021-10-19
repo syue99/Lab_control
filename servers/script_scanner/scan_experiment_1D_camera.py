@@ -71,6 +71,18 @@ class scan_experiment_1D_camera(experiment):
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)
+        #add parameters used in the experiment
+        for para in self.script.parameters:
+            dv.add_parameter(para,self.script.parameters[para], context=context)
+        #add scan points to the first element of the dataset_name
+        # we set 300 as this is very close to the background noise
+        scan_para = np.ones((1,200))*300
+        #print(self.scan_points)
+        scan_para[0,0] += self.scan_points[0][self.units]
+        scan_para[0,1] += self.scan_points[len(self.scan_points)-1][self.units]
+        scan_para[0,2] += len(self.scan_points)
+        
+        dv.add(scan_para,context = context)
             
     def update_progress(self, iteration):
         progress = self.min_progress + (self.max_progress - self.min_progress) * \

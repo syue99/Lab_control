@@ -26,6 +26,7 @@ class scan_experiment_1D(experiment):
         self.script = self.make_experiment(self.script_cls)
         self.script.initialize(cxn, context, ident)
         self.navigate_data_vault(cxn, self.parameter, context)
+        self.script.dirc = self.dirc
 
     def run(self, cxn, context):
         for i, scan_value in enumerate(self.scan_points):
@@ -70,6 +71,10 @@ class scan_experiment_1D(experiment):
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)
+        #add parameters used in the experiment
+        for para in self.script.parameters:
+            dv.add_parameter(para,self.script.parameters[para], context=context)
+            
     def update_progress(self, iteration):
         progress = self.min_progress + (self.max_progress - self.min_progress) * \
             float(iteration + 1.0) / len(self.scan_points)
@@ -78,5 +83,6 @@ class scan_experiment_1D(experiment):
     def finalize(self, cxn, context):
         self.raw_data=np.array(self.raw_data)
         #saves the raw_data into the same folder as the data vault data
-        np.savetxt("../servers/data_vault/__data__/"+self.dirc+"raw_data.csv", self.raw_data, delimiter=",", fmt="%s")
+        if self.raw_data !=[]:
+            np.savetxt("../servers/data_vault/__data__/"+self.dirc+"raw_data.csv", self.raw_data, delimiter=",", fmt="%s")
         self.script.finalize(cxn, context)

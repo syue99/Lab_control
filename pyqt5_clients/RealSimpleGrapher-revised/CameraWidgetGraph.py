@@ -54,10 +54,13 @@ class CameraWidgetGraph(QtWidgets.QWidget):
     @inlineCallbacks
     def initUI(self):
         self.tracelist = TraceList(self)
-        self.pw = pg.ImageView(view = pg.ViewBox(enableMenu=True, lockAspect=4.0))
+        vb = pg.ViewBox(enableMenu=True, lockAspect=4.0)
+        #this command is used to disable auto range
+        #vb.setRange(xRange=[100,65532], yRange=[100,65532], disableAutoRange=True)
+        self.pw = pg.ImageView(view = vb)
         self.height = 50
-        self.data = np.ones((200,50))*255
-        self.data[0,0] = 0
+        self.data = np.ones((200,50))*300
+        #self.data[0,0] = 0
         #self.data = np.random.rand(200,100)
         #print(self.data)
         colors =[
@@ -213,6 +216,7 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         return color_dict[color]
 
     def update_figure(self):
+
         for ident, params in self.artists.items():
             if params.shown:
                 try:
@@ -224,9 +228,14 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                         self.pw.setImage(self.process_data(ds.data))
                 except:
                     pass
-                x = np.linspace(0,len(ds.data)-1,len(ds.data))
+                #Fred: we make dataset.data[0] to be the parameters, see scan1d_exerpiment_camera for the format   
+                ds = params.dataset
+                start = ds.data[0][0]-300
+                end = ds.data[0][1]-300
+                pt = ds.data[0][2]-300
+                x = np.linspace(start,start+(end -start)/pt*(len(ds.data)-1),len(ds.data)-1)
                 
-                collapsed_data = np.sum(ds.data,axis=1)/len(ds.data)
+                collapsed_data = np.sum(ds.data[1:],axis=1)/len(ds.data[1])
                 self.pw2.clear()
                 line = self.pw2.plot(x, collapsed_data, symbol='o')
 
@@ -253,10 +262,15 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         self.artists[ident] = artistParameters('', dataset, index, True)
         self.tracelist.addTrace(ident, new_color)
         
-        collapsed_data = np.sum(dataset.data,axis=1)/len(dataset.data)
+        #Fred: we make dataset.data[0] to be the parameters, see scan1d_exerpiment_camera for the format
+        collapsed_data = np.sum(dataset.data[1:],axis=1)/len(dataset.data[1])
         #print(collapsed_data)
         self.pw2.clear()
-        line = self.pw2.plot(np.linspace(0,len(dataset.data)-1,len(dataset.data)), collapsed_data)
+        start = dataset.data[0][0]-300
+        end = dataset.data[0][1]-300
+        pt = dataset.data[0][2]-300
+        x = np.linspace(start,start+(end -start)/pt*(len(dataset.data)-1),len(dataset.data)-1)
+        line = self.pw2.plot(x, collapsed_data)
 
 
 
@@ -323,7 +337,8 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         data = np.asarray(data)
         rows, cols = data.shape
         if rows < self.height:
-            data = np.vstack((data, [[255] * cols for _ in range(self.height - rows)]))
+            # we set 300 as this is very close to the background noise
+            data = np.vstack((data, [[300] * cols for _ in range(self.height - rows)]))
         else:
             data = data[rows - self.height:]
         data = np.rot90(data, 1)
