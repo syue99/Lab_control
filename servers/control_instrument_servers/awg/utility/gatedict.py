@@ -3,13 +3,15 @@ import sys
 sys.path.append('../../../../config/awg/')
 from awgConfiguration import hardwareConfiguration
 
+if hardwareConfiguration.model == "M3201A":
+        nor = 500
+else:#if hardwareConfiguration.model == "M3202A":
+        nor = 1000
+
 class gatedict(object):
     
     def sigma_phi(phi,pt):
-        if hardwareConfiguration.model == "M3201A":
-            nor = 500
-        else:#if hardwareConfiguration.model == "M3202A":
-            nor = 1000
+
         wf = np.cos(2*np.pi*pt*125/nor+phi)
         #a cycle time is 4
         #print(phi)
@@ -20,7 +22,7 @@ class gatedict(object):
         #print(phi_time,-4+phi_time)
         return wf
     def sigma_phi_hann(phi,pt):
-        cycle_time = int(4)
+        cycle_time = int(4*nor/500)
         l=int(len(pt)-16)
         wf = np.zeros(len(pt))
         wf[:-4*cycle_time] = 1/2*(1-np.cos(2*np.pi*pt[:-4*cycle_time]/(l)))*np.cos(2*np.pi*pt[:-4*cycle_time]*125/500+phi)
@@ -28,7 +30,7 @@ class gatedict(object):
         return wf
 
     def sigma_phi_hamming(phi,pt):
-        cycle_time = int(4)
+        cycle_time = int(4*nor/500)
         a0 = 25/46
         l=int(len(pt)-16)
         wf = np.zeros(len(pt))
@@ -37,7 +39,7 @@ class gatedict(object):
         return wf
         
     def sigma_phi_tukey(phi,pt):
-        cycle_time = int(4)
+        cycle_time = int(4*nor/500)
         #set alpha for tukey pulse
         alpha = 0.3
         l=int(alpha*(len(pt)-16))
@@ -56,11 +58,8 @@ class gatedict(object):
 
 #for now we ignore phi and just do xx        
     def phiphi(phi, mu, v1, v2, pt):
-        cycle_time = int(4)
-        if hardwareConfiguration.model == "M3201A":
-            nor = 500
-        else:#if hardwareConfiguration.model == "M3202A":
-            nor = 1000
+        cycle_time = int(4*nor/500)
+
         wf = v1*np.cos(2*np.pi*pt*(125-mu)/nor)
         wf += v2*np.cos(2*np.pi*pt*(125+mu)/nor)
         wf = wf/(v1+v2)
@@ -68,4 +67,6 @@ class gatedict(object):
         return wf
         
         
-    gatedict = {'sigmax': sigma_x,'sigmay': sigma_y,'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi}
+    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi}
+    
+    
