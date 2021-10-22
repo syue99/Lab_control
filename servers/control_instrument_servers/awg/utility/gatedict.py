@@ -48,11 +48,24 @@ class gatedict(object):
         wf[-4*cycle_time:] = 0
         return wf
         
-    def sigma_x(pt):
-        return sigma_phi(0,pt)
+    def sigma_x(self, pt):
+        return self.sigma_phi(0,pt)
 
-    def sigma_y(pt):
-        return sigma_phi(np.pi/2,pt)
+    def sigma_y(self, pt):
+        return self.sigma_phi(np.pi/2,pt)
+
+#for now we ignore phi and just do xx        
+    def phiphi(phi, mu, v1, v2, pt):
+        cycle_time = int(4)
+        if hardwareConfiguration.model == "M3201A":
+            nor = 500
+        else:#if hardwareConfiguration.model == "M3202A":
+            nor = 1000
+        wf = v1*np.cos(2*np.pi*pt*(125-mu)/nor)
+        wf += v2*np.cos(2*np.pi*pt*(125+mu)/nor)
+        wf = wf/(v1+v2)
+        wf[-4*cycle_time:] = 0
+        return wf
         
         
-    gatedict = {'sigmax': sigma_x,'sigmay': sigma_y,'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming}
+    gatedict = {'sigmax': sigma_x,'sigmay': sigma_y,'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi}

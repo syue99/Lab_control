@@ -225,29 +225,97 @@ class keysightAWGServer(LabradServer):
         """Shut off am settings after one finished am"""
         self.awg.modulationAmplitudeConfig(channel,0,deviationGain)
 
-    @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(v,v,s)')
+    @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(?,?,s)')
     #this might be done using multithreads to speed up
     def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None):
-        #first we get total time for the sequence: in units of pi time(2.5us)+ n* 1cycle of 125MHz time (8ns) for n number of gates
-        #we need to make sure that the start time is a multiple of 8ns, which is a multiple of 1/312.5 of pi time
-        #time_nor at full sample rate: 1 or 2ns for every point
+        #we specify gates by using the format of (start_time, duration) and for the start time and duration, there can be two different units
+        #1. In the units of regular time s.t. WithUnit(n,'us'). BUT note that n must be divisible by 8. Otherwise we will have an error
+        #2. In the units of pi time s.t. WithUnit(n,'pi-time'). This is used for single qubit gates and n can be floats
+        
+        #first we get total time for the sequence: in units of pi time(2.5us)/actual time + n* 4cycle of 125MHz time (8ns) for n number of gates
+        #we also check if the time is implemented correctly
         gate_time_nor = 2504/(1000/self.nor)
         cycle_time_nor = 8/(1000/self.nor)
-        #we add every 4 cycles after a pulse to wait for the awg clean up the signal
-        total_time = (gate_list[-1][0]+gate_list[-1][1])*gate_time_nor+len(gate_list)*4*cycle_time_nor
+        time_nor = 1/(1000/self.nor)
+        gate_list = _np.array(gate_list)
+        #print(type(gate_list))
+        #we will replace the original input list to an array with normalized time
+        
+        #we need an offset array to count the offsets of every starttime due to rounding
+        #Note offset[i] is the offset before ith layer
+        #offset[0] = 0 always
+        offset = _np.zeros(len(gate_list)+1)
+        for i in range(len(gate_list)):
+            start_time = gate_list[i][0]
+            duration = gate_list[i][1]
+            
+            start_time = start_time['ns'] * time_nor + offset[i]
+            r = _np.round(_np.remainder(start_time, cycle_time_nor))
+            if r < 0.005 or r > cycle_time_nor - 0.005:
+                r = 0
+            else:
+                print(r)
+            offset[i] += r
+            start_time += r
+            
+            duration = duration['ns'] * time_nor
+            r = _np.round(_np.remainder(duration, cycle_time_nor))
+            if r < 0.005 or r > cycle_time_nor - 0.005:
+                r = 0
+            else:
+                print(r)
+            offset[i] += r
+            offset[i+1] += offset[i]
+            gate_list[i][0] = start_time
+            gate_list[i][1] = duration
+            
+            """
+            #Note: THis is a risky move as we add pi-time as a unit in the labrad.units file
+
+            if start_time.units == 'pi-time':
+                start_time = start_time['pi-time'] * gate_time_nor
+            else:
+                start_time = start_time['ns'] * time_nor
+            #first check if the divisible things make sense
+            r = _np.abs(_np.remainder(start_time, cycle_time_nor))
+            if r < 0.005 or r > cycle_time_nor - 0.005:
+                pass
+            else:
+                print(r)
+                raise Exception("wrong gate start time")
+            gate_list[i][0] = start_time
+            
+            if duration == 'pi-time':
+                duration = duration['pi-time'] * gate_time_nor
+            else:
+                duration = duration['ns'] * time_nor
+            r = _np.abs(_np.remainder(duration, cycle_time_nor))
+            if r < 0.005 or r > cycle_time_nor - 0.005:
+                pass
+            else:
+                print(r)
+                raise Exception("wrong gate duration time")
+            gate_list[i][1] = duration
+            """
+            
+        total_time = (gate_list[-1][0]+gate_list[-1][1])+len(gate_list)*4*cycle_time_nor
+        total_time = int(_np.round(total_time))
         #create the wf array with the total time, this can be much faster than np.concat/np.append
-        wf = _np.zeros(int(total_time))
+        wf = _np.zeros(total_time)
         #we need a time_counter to make sure there is no overlap
         time_counter = 0
         for gate_index in range(len(gate_list)):
             gate_start,gate_duration,gate_type = gate_list[gate_index]
-            gate_name = gate_type+"_"+str(gate_duration)+"pi_time"
+            gate_duration = int(_np.round(gate_duration))
+            gate_name = gate_type+"_"+str(gate_duration)+"pts"
             #normalize gate time and gate start time
-            gate_start = int(gate_start*gate_time_nor+gate_index*4*cycle_time_nor)
-            gate_duration = int(gate_duration*gate_time_nor+4*cycle_time_nor)
+            #print(gate_start+gate_index*4*cycle_time_nor,gate_duration+4*cycle_time_nor)
+            gate_start = int(_np.round(gate_start+gate_index*4*cycle_time_nor))
+            gate_duration = int(_np.round(gate_duration+4*cycle_time_nor))
             if gate_start >= time_counter:
                 time_counter = gate_start+gate_duration
             else:
+                
                 raise Exception("gate sequence time not specifying correclty")
             try:
                 wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+gate_name+".npy")
@@ -255,15 +323,29 @@ class keysightAWGServer(LabradServer):
                 pt = _np.linspace(0,gate_duration-1,gate_duration)
                 #now we need to make the gate 
                 gate = gate_type.split("_")
-                if len(gate)>1:
+                #single qubit gate: gatename, phi
+                if len(gate)==2:
                     gate_phi = int(gate[1])/180*_np.pi
                     #print(gate_phi)
                     gate = gate[0]
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
+                #two qubit gate
+                elif len(gate)>2:
+                    gate_phi = int(gate[1])/180*_np.pi
+                    #mu in MHz
+                    gate_mu = float(gate[2])
+                    #v for relative amplitude:
+                    v1 = int(gate[3])
+                    v2 = int(gate[4])
+                    #print(gate_phi)
+                    gate = gate[0]
+                    print(gate_start,gate_start+gate_duration)
+                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,pt)
                 else:
                     gate = gate[0]
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
                 _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
+        #_np.save("waveform/gates/two_MS_example",wf)
         self.awg.AWGfromArray(channel, triggerMode=6, startDelay=0, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
         if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
