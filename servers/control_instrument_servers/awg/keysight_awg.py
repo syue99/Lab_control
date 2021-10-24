@@ -237,7 +237,7 @@ class keysightAWGServer(LabradServer):
         sigma_phi(float in degs): single qubit gate: e.g. sigma_y: sigma_90\n
         sigmatukey_phi(float in degs): single qubit gate with tukey pulseshaping(a=0.3): e.g. sigmatukey_y: sigma_90\n
         phiphi_phi_mu(MHz)_r1_r2: two qubit gate: e.g. xx MS with mu=1.2MHz and equal strength for bsb and rsb: phiphi_0_1.2_1_1\n
-        phiphitukey_phi_mu(MHz)_r1_r2_a: two qubit gate with tukey pulseshaping: e.g. yy MS with mu=1.2MHz and a=0.1 tukey: phiphitukey_0_1.2_1_1_0.1\n
+        phiphitukey_phi_mu(MHz)_r1_r2_a: two qubit gate with tukey pulseshaping: e.g. yy MS with mu=1.2MHz and a=0.1 tukey: phiphitukey_90_1.2_1_1_0.1\n
         """
         #we specify gates by using the format of (start_time, duration) and for the start time and duration, there can be two different units
         #1. In the units of regular time s.t. WithUnit(n,'us'). BUT note that n must be divisible by 8. Otherwise we will have an error
