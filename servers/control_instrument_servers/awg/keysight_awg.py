@@ -359,7 +359,8 @@ class keysightAWGServer(LabradServer):
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
                 _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
         _np.save("waveform/gates/two_MS_example",wf)
-        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=0, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
+        #we add 100*10ns delay as we trigger both the switch and awg using the same ttl 
+        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=100, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
         if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
             self.awg.channelAmplitude(channel, amplitude["V"])
