@@ -330,6 +330,19 @@ class keysightAWGServer(LabradServer):
                     gate = gate[0]
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
                 #two qubit gate
+                #tukey phi phi
+                elif len(gate)==6:
+                    gate_phi = int(gate[1])/180*_np.pi
+                    #mu in MHz
+                    gate_mu = float(gate[2])
+                    #v for relative amplitude:
+                    v1 = int(gate[3])
+                    v2 = int(gate[4])
+                    alpha = float(gate[5])
+                    #print(gate_phi)
+                    gate = gate[0]
+                    print(gate_start,gate_start+gate_duration)
+                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,alpha,pt)
                 elif len(gate)>2:
                     gate_phi = int(gate[1])/180*_np.pi
                     #mu in MHz
@@ -345,7 +358,7 @@ class keysightAWGServer(LabradServer):
                     gate = gate[0]
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
                 _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
-        #_np.save("waveform/gates/two_MS_example",wf)
+        _np.save("waveform/gates/two_MS_example",wf)
         self.awg.AWGfromArray(channel, triggerMode=6, startDelay=0, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
         if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
