@@ -299,7 +299,7 @@ class keysightAWGServer(LabradServer):
             """
             
         total_time = (gate_list[-1][0]+gate_list[-1][1])+len(gate_list)*4*cycle_time_nor
-        total_time = int(_np.round(total_time))
+        total_time = int(_np.ceil(total_time))
         #create the wf array with the total time, this can be much faster than np.concat/np.append
         wf = _np.zeros(total_time)
         #we need a time_counter to make sure there is no overlap
