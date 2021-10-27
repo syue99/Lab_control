@@ -261,27 +261,33 @@ class keysightAWGServer(LabradServer):
         for i in range(len(gate_list)):
             start_time = gate_list[i][0]
             duration = gate_list[i][1]
-            
-            start_time = start_time['ns'] * time_nor + offset[i]
+            print(start_time,duration)
+            start_time = _np.ceil(start_time['ns']) * time_nor + offset[i]
             r = _np.round(_np.remainder(start_time, cycle_time_nor))
             if r < 0.005 or r > cycle_time_nor - 0.005:
                 r = 0
+                #print(r)
             else:
-                print(r)
+                #pass
+                r = cycle_time_nor - r
+                #print(r)
             offset[i] += r
             start_time += r
             
-            duration = duration['ns'] * time_nor
+            duration = _np.ceil(duration['ns']) * time_nor
             r = _np.round(_np.remainder(duration, cycle_time_nor))
             if r < 0.005 or r > cycle_time_nor - 0.005:
                 r = 0
+                #print(r)
             else:
-                print(r)
+                r = cycle_time_nor - r
+                #pass
+            #    print(r)
             offset[i] += r
             offset[i+1] += offset[i]
             gate_list[i][0] = start_time
             gate_list[i][1] = duration
-            
+            print(start_time,duration)
             """
             #Note: THis is a risky move as we add pi-time as a unit in the labrad.units file
 
@@ -331,6 +337,7 @@ class keysightAWGServer(LabradServer):
                 
                 raise Exception("gate sequence time not specifying correclty")
             try:
+                print(gate_start,gate_start+gate_duration)
                 wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+gate_name+".npy")
             except:
                 pt = _np.linspace(0,gate_duration-1,gate_duration)
@@ -339,7 +346,7 @@ class keysightAWGServer(LabradServer):
                 #single qubit gate: gatename, phi
                 if len(gate)==2:
                     gate_phi = int(gate[1])/180*_np.pi
-                    #print(gate_phi)
+                    print(gate_phi)
                     gate = gate[0]
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
                 #two qubit gate
@@ -372,8 +379,8 @@ class keysightAWGServer(LabradServer):
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
                 _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
         _np.save("waveform/gates/two_MS_example",wf)
-        #we add 100*10ns delay as we trigger both the switch and awg using the same ttl 
-        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=100, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
+        #we add 300*10ns delay as we trigger both the switch and awg using the same ttl 
+        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=300, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
         if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
             self.awg.channelAmplitude(channel, amplitude["V"])
