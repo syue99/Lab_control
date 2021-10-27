@@ -56,6 +56,10 @@ class gatedict(object):
     def sigma_y(self, pt):
         return self.sigma_phi(np.pi/2,pt)
 
+    def blank(pt):
+        return pt*0
+    
+    
 #change the spin phi: phi_b+phi_r)/2  see Luming duan Yukai Wu PRA   
     def phiphi(phi, mu, v1, v2, pt):
         cycle_time = int(4*nor/500)
@@ -78,6 +82,6 @@ class gatedict(object):
         wf[-4*cycle_time:] = 0
         return wf        
         
-    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey}
+    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey, 'blank': blank}
     
     

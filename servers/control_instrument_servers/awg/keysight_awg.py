@@ -17,10 +17,12 @@ timeout = 5
 """
 from labrad.server import LabradServer
 from labrad.server import setting
+from labrad.units import WithUnit
 import labrad.units as _u
 import numpy as _np
 from scipy.fftpack import ifft,fft, rfft, irfft
 import sys 
+
 try:
     sys.path.append('C:\Program Files\Keysight\SD1\Libraries\Python') 
     import keysightSD1
@@ -225,7 +227,7 @@ class keysightAWGServer(LabradServer):
         """Shut off am settings after one finished am"""
         self.awg.modulationAmplitudeConfig(channel,0,deviationGain)
 
-    @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(?,?,s)')
+    @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(?,?,s)', returns='v[ns]')
     #this might be done using multithreads to speed up
     def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None):
         """Using the direct AWG output to generate a gate sequence with single and two-qubit gates\n
@@ -377,6 +379,8 @@ class keysightAWGServer(LabradServer):
             self.awg.channelAmplitude(channel, amplitude["V"])
         else:
             raise Exception("the amp is bigger than the set threshold")       
+        
+        return WithUnit(total_time*(1000/self.nor),'ns')
         
 if __name__ == "__main__":
     from labrad import util
