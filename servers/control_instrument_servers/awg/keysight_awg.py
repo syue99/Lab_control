@@ -363,6 +363,25 @@ class keysightAWGServer(LabradServer):
                     gate = gate[0]
                     print(gate_start,gate_start+gate_duration)
                     wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,alpha,pt)
+                elif len(gate)==4:
+                    gate_phi_list = gate[1].split(",")
+                    gate_phi = []
+                    for i in gate_phi_list:
+                        gate_phi.append(float(i)/180*_np.pi)
+                    #mu in MHz
+                    gate_mu_list = gate[2].split(",")
+                    gate_mu = []
+                    for i in gate_mu_list:
+                        gate_mu.append(float(i))
+                    #v for relative amplitude:
+                    gate_v_list = gate[3].split(",")
+                    gate_v = []
+                    for i in gate_v_list:
+                        gate_v.append(float(i))
+                    #print(gate_phi)
+                    gate = gate[0]
+                    print(gate_start,gate_start+gate_duration)
+                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,gate_v,pt)
                 elif len(gate)>2:
                     gate_phi = int(gate[1])/180*_np.pi
                     #mu in MHz

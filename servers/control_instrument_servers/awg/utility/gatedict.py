@@ -81,7 +81,23 @@ class gatedict(object):
         wf[-4*cycle_time-l:-4*cycle_time] = 1/2*(1-np.cos(np.pi*pt[l:2*l]/(l))) * wf[-4*cycle_time-l:-4*cycle_time]
         wf[-4*cycle_time:] = 0
         return wf        
-        
-    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey, 'blank': blank}
+    
+#arbitray detuning gate, now phi, mu and v are lists
+    def detuning(phi, mu, v, pt):
+        cycle_time = int(4*nor/500)
+        #first check if all the lists have the same length
+        if len(phi) != len(mu) or len(v) != len(mu) or len(phi) != len(v):
+            raise Exception("gate parameters not correct")
+        wf = 0
+        for i in range(len(phi)):
+            #print(v[i],mu[i],phi[i])
+            wf += v[i]*np.cos(2*np.pi*pt*(125-mu[i])/nor+phi[i])
+        wf = wf/(np.sum(v))
+        #print(np.sum(v))
+        #print(np.max(wf))
+        wf[-4*cycle_time:] = 0
+        return wf
+    
+    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey, 'blank': blank, "detuning":detuning}
     
     
