@@ -17,6 +17,10 @@ class FitWindow(QtWidgets.QWidget):
     def __init__(self, dataset, index, parent):
         super(FitWindow, self).__init__()
         self.dataset = dataset
+        try:
+            self.currentident = dataset.ident
+        except:
+            pass
         self.index = index
         self.parent = parent
         self.fw = FitWrapper(dataset, index)
@@ -135,10 +139,17 @@ class FitWindow(QtWidgets.QWidget):
         ds = dataset(data)
         try:
             # remove the previous fit
-            self.parent.parent.remove_artist(self.ident)
-            self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
+            try:
+                self.parent.parent.artists[self.currentident].fitted_data = data
+                
+            except:
+                self.parent.parent.remove_artist(self.ident)
+                self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
         except:
-            self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
+            try:
+                self.parent.parent.artists[self.currentident].fitted_data = data
+            except:
+                self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
 
     def onActivated(self):
         '''
@@ -179,10 +190,16 @@ class FitWindow(QtWidgets.QWidget):
         ds = dataset(data)
         try:
             # remove the previous plot
-            self.parent.parent.remove_artist(self.ident)
-            self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
+            try:
+                self.parent.parent.artists[self.currentident].fitted_data = data
+            except:
+                self.parent.parent.remove_artist(self.ident)
+                self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
         except:
-            self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
+            try:
+                self.parent.parent.artists[self.currentident].fitted_data = data
+            except:
+                self.parent.parent.add_artist(self.ident, ds, 0, no_points = True)
 
 
     def closeEvent(self, event):

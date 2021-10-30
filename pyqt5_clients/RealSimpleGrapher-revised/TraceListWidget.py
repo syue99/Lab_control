@@ -117,7 +117,10 @@ class TraceList(QtWidgets.QListWidget):
                 
 
             if action == fitAction:
-                dataset = self.parent.artists[ident].dataset
+                try:
+                    dataset = self.parent.artists[ident].collapsed_data
+                except:
+                    dataset = self.parent.artists[ident].dataset
                 index = self.parent.artists[ident].index
                 fw = FitWindow(dataset, index, self)
                 self.windows.append(fw)

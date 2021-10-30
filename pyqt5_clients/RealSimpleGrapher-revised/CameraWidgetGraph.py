@@ -238,6 +238,12 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                 collapsed_data = np.sum(ds.data[1:],axis=1)/len(ds.data[1])
                 self.pw2.clear()
                 line = self.pw2.plot(x, collapsed_data, symbol='o')
+                
+                try:
+                    fit_ds = params.fitted_data
+                    line2 = self.pw2.plot(fit_ds[:,0], fit_ds[:,1])
+                except:
+                    pass
 
 
     def _check_artist_exist(self, ident):
@@ -272,6 +278,15 @@ class CameraWidgetGraph(QtWidgets.QWidget):
         x = np.linspace(start,start+(end -start)/(pt-1)*(len(dataset.data)-2),len(dataset.data)-1)
         
         line = self.pw2.plot(x, collapsed_data)
+        class dataset2():
+            def __init__(self, data):
+                self.data = data
+                self.dataset_name = "collapsed image data"
+                self.updateCounter = 1
+                self.ident = ident
+        
+        collapsed_data_set = dataset2(np.stack((x,collapsed_data), axis=1))
+        self.artists[ident].collapsed_data = collapsed_data_set
 
 
 
