@@ -233,13 +233,14 @@ class CameraWidgetGraph(QtWidgets.QWidget):
                 start = ds.data[0][0]-300
                 end = ds.data[0][1]-300
                 pt = ds.data[0][2]-300
-                x = np.linspace(start,start+(end -start)/(pt-1)*(len(ds.data)-2),len(ds.data)-1)
                 
-                collapsed_data = np.sum(ds.data[1:],axis=1)/len(ds.data[1])
+                
                 self.pw2.clear()
-                line = self.pw2.plot(x, collapsed_data, symbol='o')
                 
                 try:
+                    x = np.linspace(start,start+(end -start)/(pt-1)*(len(ds.data)-2),len(ds.data)-1)
+                    collapsed_data = np.sum(ds.data[1:],axis=1)/len(ds.data[1])
+                    line = self.pw2.plot(x, collapsed_data, symbol='o')
                     fit_ds = params.fitted_data
                     line2 = self.pw2.plot(fit_ds[:,0], fit_ds[:,1])
                 except:

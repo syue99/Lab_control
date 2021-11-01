@@ -27,12 +27,15 @@ class Lorentzian(Model):
         return p[3] +  p[1]*0.5*p[2]/( (x - p[0])**2 + (0.5*p[2])**2)
 
     def guess_center(self, x, y):
-        max_index = np.argmax(y)
-        return x[max_index]
+        #Fred: make it negative for better fitting as our spectrum is absorption
+        #max_index = np.argmax(y)
+        min_index = np.argmin(y)
+        return x[min_index]
 
     def guess_scale(self, x, y):
         area = (max(x) - min(x))*(max(y) - min(y))
-        return area
+        #Fred: make it negative for better fitting as our spectrum is absorption
+        return -area
     
     def guess_fwhm(self, x, y):
         return (max(x) - min(x))/6.0
