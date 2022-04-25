@@ -11,8 +11,8 @@ class Rabi(Model):
     def __init__(self):
         self.parameters = {
             'omega_rabi': ParameterInfo('f_rabi', 0, self.guess_omega_rabi),
-            'nbar': ParameterInfo('nbar', 1, lambda x, y: 5, True),
-            'eta':ParameterInfo('eta', 2, lambda x, y: 0.05, vary=False),
+            'nbar': ParameterInfo('nbar', 1, lambda x, y: 0.5, True),
+            'eta':ParameterInfo('eta', 2, lambda x, y: 0.784, vary=False),
             'delta': ParameterInfo('delta', 3, lambda x,y: 0, vary=False),
             'sideband_order': ParameterInfo('sideband_order', 4, lambda x, y: 0, vary = False),
             'excitation_scaling': ParameterInfo('excitation_scaling', 5, lambda x,y: 1.0, vary = False)
@@ -27,20 +27,20 @@ class Rabi(Model):
         sideband_order = p[4]
         excitation_scaling = p[5]
         
-        nmax = 1000
+        nmax = 100
 
         omega = rc.compute_rabi_coupling(eta, sideband_order, nmax)
         ones = np.ones_like(x)
         p_n = md.thermal(nbar, nmax)
         #print(p_n)
-        if 1 - p_n.sum() > 1e-6:
+        if 1 - p_n.sum() > 1e-4:
             raise Exception ('Hilbert space too small, missing population')
         if delta == 0:
             #prevents division by zero if delta == 0, omega == 0
             effective_omega = 1.
         else:
             effective_omega = omega/np.sqrt(omega**2+delta**2)
-        result = np.outer(p_n * effective_omega, ones) * (np.sin( np.outer( np.sqrt(omega**2+delta**2)*omega_rabi/2, x ))**2)
+        result = np.outer(p_n * effective_omega, ones) * (np.cos( np.outer( np.sqrt(omega**2+delta**2)*omega_rabi/2, x ))**2)
         result = np.sum(result, axis = 0)
         result = excitation_scaling * result
         return result

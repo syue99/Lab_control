@@ -99,6 +99,12 @@ class keysightAWGServer(LabradServer):
         self.awg.channelWaveShape(channel, 6)
         file = 'waveform/'+file
         self.awg.AWGFromFile(channel, file, triggerMode=0, startDelay=0, cycles=0, prescaler=None, paddingMode = 0)
+
+    @setting(12, "AWG Play from Array", channel='w', array='*?', returns='')
+    def awg_play_from_array(self, c, channel=None, array=None):
+        """Play the named channel or the selected channel with AWG file input."""
+        self.awg.channelWaveShape(channel, 6)
+        self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=array, paddingMode = 0)
         
     @setting(5, "AWG stop", channel='w', returns='')
     def awg_stop(self, c, channel=None):
@@ -192,8 +198,8 @@ class keysightAWGServer(LabradServer):
         else:
             raise Exception("the amp is bigger than the set threshold")
 
-    @setting(9, "multi ion sideband cooling", channel='w', amplitude='v[V]', carrier_freq='v[MHz]', cm_freq='v[MHz]', n='w', returns='')
-    def multi_ion_sb_cooling(self, c, channel=None, amplitude=None, carrier_freq=None, cm_freq=None, n=None):
+    @setting(9, "multi ion sideband cooling", channel='w', amplitude='v[V]', carrier_freq='v[MHz]', cm_freq='v[MHz]', n='w', cm_amp = "v", returns='')
+    def multi_ion_sb_cooling(self, c, channel=None, amplitude=None, carrier_freq=None, cm_freq=None, n=None, cm_amp=2):
         """Using the direct AWG output to generate multitone sideband cooling pulse for axial modes for multi-ions\n
         channel (int): channel number\n
         amplitudes (Volts): the amplitude of MS\n
@@ -201,18 +207,26 @@ class keysightAWGServer(LabradServer):
         cm_freq (Hz): center of mass freq to locate the freq of blue and red sideband\n
         n (int): number of ions cool\n
         """
-        file_name = "waveform/multi_ion_sideband_cooling_carrier_"+str(carrier_freq["MHz"])+"MHz_cmfreq_"+str(cm_freq["MHz"])+"MHz_"+str(n)+"order.csv"
+        file_name = "waveform/multi_ion_sideband_cooling_carrier_"+str(carrier_freq["MHz"])+"MHz_cmfreq_"+"MHz_"+str(cm_freq["MHz"])+"amp"+str(cm_amp)+"_"+str(n)+"order.csv"
         try:
             wf = _np.loadtxt(file_name,delimiter=',')
         except:
             pt = _np.linspace(0,16666*2-1,16666*2)
             modes = Axialmodes(n,cm_freq["MHz"])  
-            wf = 1.5*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0])*pt/self.nor)
+            wf = cm_amp*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0])*pt/self.nor)
             #print(modes)
             for i in modes[1:]:
             #note here the unit is in MHz
-                wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-i)*pt/self.nor)
-            wf = wf/(n+0.5)       
+                wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-i)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[1]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]-mode[1])*pt/self.nor + _np.random.rand()*_np.pi*2)
+
+            
+            #wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-0.237*2.7)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            print(_np.max(_np.abs(wf)))
+
+            wf = wf/_np.max(_np.abs(wf))       
             wf.tofile(file_name,sep=',',format='%10.16f')
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
         self.awg.channelWaveShape(channel, 6)
