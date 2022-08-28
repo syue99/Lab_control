@@ -105,6 +105,14 @@ class keysightAWGServer(LabradServer):
         """Play the named channel or the selected channel with AWG file input."""
         self.awg.channelWaveShape(channel, 6)
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=array, paddingMode = 0)
+
+##Implented but not tested yet
+    @setting(13, "AWG Play from Array with trigger", channel='w', array='*?', repetition='w' returns='')
+    def awg_play_from_array_trigger(self, c, channel=None, array=None, repetition=None):
+        """Play the named channel or the selected channel with AWG file input."""
+        self.awg.channelWaveShape(channel, 6)
+        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=0, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=array, paddingMode = 0)
+
         
     @setting(5, "AWG stop", channel='w', returns='')
     def awg_stop(self, c, channel=None):
@@ -240,7 +248,7 @@ class keysightAWGServer(LabradServer):
     def am_stop(self, c, channel=None, deviationGain=0):
         """Shut off am settings after one finished am"""
         self.awg.modulationAmplitudeConfig(channel,0,deviationGain)
-
+##IQ mod part: Implented but not tested yet
     @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(?,?,s)', returns='v[ns]')
     #this might be done using multithreads to speed up
     def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None, USE_IQ = 0):
