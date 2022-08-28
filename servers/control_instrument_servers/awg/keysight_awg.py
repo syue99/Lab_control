@@ -107,7 +107,7 @@ class keysightAWGServer(LabradServer):
         self.awg.AWGfromArray(channel, triggerMode=0, startDelay=0, cycles=0, prescaler=None, waveformType=0, waveformDataA=array, paddingMode = 0)
 
 ##Implented but not tested yet
-    @setting(13, "AWG Play from Array with trigger", channel='w', array='*?', repetition='w' returns='')
+    @setting(13, "AWG Play from Array with trigger", channel='w', array='*?', repetition='w', returns='')
     def awg_play_from_array_trigger(self, c, channel=None, array=None, repetition=None):
         """Play the named channel or the selected channel with AWG file input."""
         self.awg.channelWaveShape(channel, 6)
@@ -226,9 +226,9 @@ class keysightAWGServer(LabradServer):
             for i in modes[1:]:
             #note here the unit is in MHz
                 wf += _np.sin(2*_np.pi*(carrier_freq["MHz"]-i)*pt/self.nor + _np.random.rand()*_np.pi*2)
-            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
-            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[1]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
-            wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]-mode[1])*pt/self.nor + _np.random.rand()*_np.pi*2)
+            #wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            #wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[1]*2)*pt/self.nor + _np.random.rand()*_np.pi*2)
+            #wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-modes[0]-modes[1])*pt/self.nor + _np.random.rand()*_np.pi*2)
 
             
             #wf += 2*_np.sin(2*_np.pi*(carrier_freq["MHz"]-0.237*2.7)*pt/self.nor + _np.random.rand()*_np.pi*2)
