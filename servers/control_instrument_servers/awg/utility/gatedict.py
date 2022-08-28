@@ -97,7 +97,35 @@ class gatedict(object):
         #print(np.max(wf))
         wf[-4*cycle_time:] = 0
         return wf
+#For IQ modulation with prescale 2, cycle time is 2nor/500
+    def IQ_blank(pt):
+        return pt*0    
+        
+    def IQ_phi(phi,pt):
+        IQ_cycle_time = int(2*nor/500)
+        length = int(len(pt)/2)
+        pt[:length] = np.cos(phi)*np.ones(length)
+        pt[length:] = np.sin(phi)*np.ones(length)
+        pt[-4*IQ_cycle_time:] = 0
+        pt[length-4*IQ_cycle_time:length] = 0
+        return pt
     
-    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey, 'blank': blank, "detuning":detuning}
+    #how to make the balance needs to calibrate by the experiment, need further implementation
+    def IQ_phi_phi(phi, mu, v1, v2, pt):
+        IQ_cycle_time = int(2*nor/500)
+        length = int(len(pt)/2)
+        vdiff = v1-v2
+        wf = np.zeros(len(pt))
+        #we set prescale = 2
+        wf[:length] = np.sin(-2*np.pi*(2*mu)*pt[:length]/(nor/(2*5)))
+        wf[length:] = np.zeros(length)
+        pt[-4*IQ_cycle_time:] = 0
+        pt[length-4*IQ_cycle_time:length] = 0      
+        return wf
+        
+        
+    gatedict = {'sigma': sigma_phi, 'sigmatukey':sigma_phi_tukey, 'sigmahann':sigma_phi_hann, 'sigmahamming': sigma_phi_hamming, 'phiphi': phiphi, 'phiphitukey': phiphi_tukey, 'blank': blank, "detuning":detuning,
+    "IQblank": IQ_blank, "IQphi": IQ_phi, "IQphiphi": IQ_phi_phi
+    }
     
     

@@ -243,7 +243,7 @@ class keysightAWGServer(LabradServer):
 
     @setting(11, "compile gates", channel='w', amplitude='v[V]', repetition = 'w', gate_list = '*(?,?,s)', returns='v[ns]')
     #this might be done using multithreads to speed up
-    def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None):
+    def compile_gates(self, c, channel=None, amplitude=None, repetition = None, gate_list = None, USE_IQ = 0):
         """Using the direct AWG output to generate a gate sequence with single and two-qubit gates\n
         channel (int): channel number\n
         amplitudes (Volts): the amplitude of MS\n
@@ -268,6 +268,14 @@ class keysightAWGServer(LabradServer):
         #print(type(gate_list))
         #we will replace the original input list to an array with normalized time
         
+        if USE_IQ==1:
+            prescale = 2
+            gate_time_nor = 2504/(1000/(self.nor/(prescale*5)))
+            cycle_time_nor = 8/(1000/(self.nor/(prescale)))
+            time_nor = 1/(1000/(self.nor/(prescale*5)))
+            IQ_Path = "IQ/"
+        else:
+            IQ_Path = ""
         #we need an offset array to count the offsets of every starttime due to rounding
         #Note offset[i] is the offset before ith layer
         #offset[0] = 0 always
@@ -275,7 +283,7 @@ class keysightAWGServer(LabradServer):
         for i in range(len(gate_list)):
             start_time = gate_list[i][0]
             duration = gate_list[i][1]
-            print(start_time,duration)
+            #print(start_time,duration, time_nor)
             start_time = _np.ceil(start_time['ns']) * time_nor + offset[i]
             r = _np.round(_np.remainder(start_time, cycle_time_nor))
             if r < 0.005 or r > cycle_time_nor - 0.005:
@@ -301,7 +309,7 @@ class keysightAWGServer(LabradServer):
             offset[i+1] += offset[i]
             gate_list[i][0] = start_time
             gate_list[i][1] = duration
-            print(start_time,duration)
+            #print(start_time,duration)
             """
             #Note: THis is a risky move as we add pi-time as a unit in the labrad.units file
 
@@ -334,93 +342,154 @@ class keysightAWGServer(LabradServer):
         total_time = (gate_list[-1][0]+gate_list[-1][1])+len(gate_list)*4*cycle_time_nor
         total_time = int(_np.ceil(total_time))
         #create the wf array with the total time, this can be much faster than np.concat/np.append
-        wf = _np.zeros(total_time)
-        #we need a time_counter to make sure there is no overlap
-        time_counter = 0
-        for gate_index in range(len(gate_list)):
-            gate_start,gate_duration,gate_type = gate_list[gate_index]
-            gate_duration = int(_np.round(gate_duration))
-            gate_name = gate_type+"_"+str(gate_duration)+"pts"
-            #normalize gate time and gate start time
-            #print(gate_start+gate_index*4*cycle_time_nor,gate_duration+4*cycle_time_nor)
-            gate_start = int(_np.round(gate_start+gate_index*4*cycle_time_nor))
-            gate_duration = int(_np.round(gate_duration+4*cycle_time_nor))
-            if gate_start >= time_counter:
-                time_counter = gate_start+gate_duration
-            else:
-                
-                raise Exception("gate sequence time not specifying correclty")
-            try:
-                print(gate_start,gate_start+gate_duration)
-                wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+gate_name+".npy")
-            except:
-                pt = _np.linspace(0,gate_duration-1,gate_duration)
-                #now we need to make the gate 
-                gate = gate_type.split("_")
-                #single qubit gate: gatename, phi
-                if len(gate)==2:
-                    gate_phi = int(gate[1])/180*_np.pi
-                    print(gate_phi)
-                    gate = gate[0]
-                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
-                #two qubit gate
-                #tukey phi phi
-                elif len(gate)==6:
-                    gate_phi = int(gate[1])/180*_np.pi
-                    #mu in MHz
-                    gate_mu = float(gate[2])
-                    #v for relative amplitude:
-                    v1 = int(gate[3])
-                    v2 = int(gate[4])
-                    alpha = float(gate[5])
-                    #print(gate_phi)
-                    gate = gate[0]
-                    print(gate_start,gate_start+gate_duration)
-                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,alpha,pt)
-                elif len(gate)==4:
-                    gate_phi_list = gate[1].split(",")
-                    gate_phi = []
-                    for i in gate_phi_list:
-                        gate_phi.append(float(i)/180*_np.pi)
-                    #mu in MHz
-                    gate_mu_list = gate[2].split(",")
-                    gate_mu = []
-                    for i in gate_mu_list:
-                        gate_mu.append(float(i))
-                    #v for relative amplitude:
-                    gate_v_list = gate[3].split(",")
-                    gate_v = []
-                    for i in gate_v_list:
-                        gate_v.append(float(i))
-                    #print(gate_phi)
-                    gate = gate[0]
-                    print(gate_start,gate_start+gate_duration)
-                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,gate_v,pt)
-                elif len(gate)>2:
-                    gate_phi = int(gate[1])/180*_np.pi
-                    #mu in MHz
-                    gate_mu = float(gate[2])
-                    #v for relative amplitude:
-                    v1 = int(gate[3])
-                    v2 = int(gate[4])
-                    #print(gate_phi)
-                    gate = gate[0]
-                    print(gate_start,gate_start+gate_duration)
-                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,pt)
+        if USE_IQ==1:
+            wf = _np.zeros(total_time*2)
+            time_counter = 0
+            for gate_index in range(len(gate_list)):
+                gate_start,gate_duration,gate_type = gate_list[gate_index]
+                gate_duration = int(_np.round(gate_duration))
+                gate_name = gate_type+"_"+str(gate_duration)+"pts"
+                #normalize gate time and gate start time
+                #print(gate_start+gate_index*4*cycle_time_nor,gate_duration+4*cycle_time_nor)
+                gate_start = int(_np.round(gate_start+gate_index*4*cycle_time_nor))
+                gate_duration = int(_np.round(gate_duration+4*cycle_time_nor))
+                if gate_start >= time_counter:
+                    time_counter = gate_start+gate_duration
                 else:
-                    gate = gate[0]
-                    wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
-                _np.save("waveform/gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
-        _np.save("waveform/gates/two_MS_example",wf)
-        #we add 300*10ns delay as we trigger both the switch and awg using the same ttl 
-        self.awg.AWGfromArray(channel, triggerMode=6, startDelay=300, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
-        self.awg.channelWaveShape(channel, 6)
-        if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
-            self.awg.channelAmplitude(channel, amplitude["V"])
-        else:
-            raise Exception("the amp is bigger than the set threshold")       
+                    
+                    raise Exception("gate sequence time not specifying correclty")
+                try:
+                    #print(gate_start,gate_start+gate_duration)
+                    wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+IQ_Path+gate_name+".npy")[:gate_duration]
+                    wf[total_time+gate_start:total_time+gate_start+gate_duration] = _np.load("waveform/gates/"+IQ_Path+gate_name+".npy")[gate_duration:]
+                except:
+                    pt = _np.linspace(0,gate_duration*2-1,gate_duration*2)
+                    #now we need to make the gate 
+                    gate = gate_type.split("_")
+                    #single qubit gate: gatename, phi
+                    if len(gate)==2:
+                        gate_phi = int(gate[1])/180*_np.pi
+                        #print(gate_phi)
+                        gate = gate[0]
+                        gate_dict_result = gatedict.gatedict[gate](gate_phi,pt)
+                    elif len(gate)>2:
+                        gate_phi = int(gate[1])/180*_np.pi
+                        #mu in MHz
+                        gate_mu = float(gate[2])
+                        #v for relative amplitude:
+                        v1 = int(gate[3])
+                        v2 = int(gate[4])
+                        #print(gate_phi)
+                        gate = gate[0]
+                        #print(gate_start,gate_start+gate_duration)
+                        gate_dict_result = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,pt)
+                    else:
+                        gate = gate[0]
+                        gate_dict_result = gatedict.gatedict[gate](pt)
+                    wf[gate_start:gate_start+gate_duration] = gate_dict_result[:gate_duration]
+                    wf[total_time+gate_start:total_time+gate_start+gate_duration] = gate_dict_result[gate_duration:]
+                    _np.save("waveform/"+IQ_Path+"gates/"+gate_name,gate_dict_result)
+            _np.save("waveform/"+IQ_Path+"gates/two_MS_example",wf)
+            #we add 300*10ns delay as we trigger both the switch and awg using the same ttl
+            self.awg.modulationIQconfig(channel, 1)
+            if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
+                self.awg.channelAmplitude(channel, amplitude["V"])
+            else:
+                raise Exception("the amp is bigger than the set threshold")    
+            self.awg.AWGfromArray(channel, triggerMode=6, startDelay=300, cycles=repetition, prescaler=prescale, waveformType=2, waveformDataA=wf[:total_time], waveformDataB=wf[total_time:], paddingMode = 0)
+            self.awg.channelFrequency(channel, 125000000)
+            self.awg.channelWaveShape(channel, 1)  
+            return WithUnit(total_time*(prescale*5*1000/self.nor),'ns')            
+        else:   
+            wf = _np.zeros(total_time)
+            #we need a time_counter to make sure there is no overlap
+            time_counter = 0
+            for gate_index in range(len(gate_list)):
+                gate_start,gate_duration,gate_type = gate_list[gate_index]
+                gate_duration = int(_np.round(gate_duration))
+                gate_name = gate_type+"_"+str(gate_duration)+"pts"
+                #normalize gate time and gate start time
+                #print(gate_start+gate_index*4*cycle_time_nor,gate_duration+4*cycle_time_nor)
+                gate_start = int(_np.round(gate_start+gate_index*4*cycle_time_nor))
+                gate_duration = int(_np.round(gate_duration+4*cycle_time_nor))
+                if gate_start >= time_counter:
+                    time_counter = gate_start+gate_duration
+                else:
+                    
+                    raise Exception("gate sequence time not specifying correclty")
+                try:
+                    #print(gate_start,gate_start+gate_duration)
+                    wf[gate_start:gate_start+gate_duration] = _np.load("waveform/gates/"+IQ_Path+gate_name+".npy")
+                except:
+                    pt = _np.linspace(0,gate_duration-1,gate_duration)
+                    #now we need to make the gate 
+                    gate = gate_type.split("_")
+                    #single qubit gate: gatename, phi
+                    if len(gate)==2:
+                        gate_phi = int(gate[1])/180*_np.pi
+                        #print(gate_phi)
+                        gate = gate[0]
+                        wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,pt)
+                    #two qubit gate
+                    #tukey phi phi
+                    elif len(gate)==6:
+                        gate_phi = int(gate[1])/180*_np.pi
+                        #mu in MHz
+                        gate_mu = float(gate[2])
+                        #v for relative amplitude:
+                        v1 = int(gate[3])
+                        v2 = int(gate[4])
+                        alpha = float(gate[5])
+                        #print(gate_phi)
+                        gate = gate[0]
+                        #print(gate_start,gate_start+gate_duration)
+                        wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,alpha,pt)
+                    elif len(gate)==4:
+                        gate_phi_list = gate[1].split(",")
+                        gate_phi = []
+                        for i in gate_phi_list:
+                            gate_phi.append(float(i)/180*_np.pi)
+                        #mu in MHz
+                        gate_mu_list = gate[2].split(",")
+                        gate_mu = []
+                        for i in gate_mu_list:
+                            gate_mu.append(float(i))
+                        #v for relative amplitude:
+                        gate_v_list = gate[3].split(",")
+                        gate_v = []
+                        for i in gate_v_list:
+                            gate_v.append(float(i))
+                        #print(gate_phi)
+                        gate = gate[0]
+                        #print(gate_start,gate_start+gate_duration)
+                        wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,gate_v,pt)
+                    elif len(gate)>2:
+                        gate_phi = int(gate[1])/180*_np.pi
+                        #mu in MHz
+                        gate_mu = float(gate[2])
+                        #v for relative amplitude:
+                        v1 = int(gate[3])
+                        v2 = int(gate[4])
+                        #print(gate_phi)
+                        gate = gate[0]
+                        #print(gate_start,gate_start+gate_duration)
+                        wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](gate_phi,gate_mu,v1,v2,pt)
+                    else:
+                        gate = gate[0]
+                        wf[gate_start:gate_start+gate_duration] = gatedict.gatedict[gate](pt)
+                    _np.save("waveform/"+IQ_Path+"gates/"+gate_name,wf[gate_start:gate_start+gate_duration])
+            _np.save("waveform/"+IQ_Path+"gates/two_MS_example",wf)
+            #we add 300*10ns delay as we trigger both the switch and awg using the same ttl
+            self.awg.modulationIQconfig(channel, 0)
+            self.awg.AWGfromArray(channel, triggerMode=6, startDelay=300, cycles=repetition, prescaler=None, waveformType=0, waveformDataA=wf, paddingMode = 0)
+            self.awg.channelWaveShape(channel, 6)
         
-        return WithUnit(total_time*(1000/self.nor),'ns')
+            if abs(amplitude["V"]) < hardwareConfiguration.channel_awg_amp_thres[channel-1]:
+                self.awg.channelAmplitude(channel, amplitude["V"])
+            else:
+                raise Exception("the amp is bigger than the set threshold")       
+        
+            return WithUnit(total_time*(1000/self.nor),'ns')
         
 if __name__ == "__main__":
     from labrad import util
