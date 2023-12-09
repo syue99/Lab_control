@@ -58,6 +58,7 @@ class ParameterVault(LabradServer):
                 value = yield self.client.registry.get(parameter)
                 key = tuple(subPath + [parameter])
                 self.parameters[key] = value
+                print(value)
         for directory in directories:
             newpath = subPath + [directory]
             yield self._addParametersInDirectory(topPath, newpath)
@@ -97,7 +98,14 @@ class ParameterVault(LabradServer):
             raise Exception("Can't save, not one of checkable types")
 
     def _check_parameter(self, key, value):
-        """Checks parameters.
+        """
+        Checks parameters.
+        For most experiments, we need to set minimum and maximum limit for parameters. Therefore, you can find out that
+        there are some List operations in the below codes.
+
+        For example, suppose we have a parameter whose name (key) is 'test', and the value
+        should be a Tuple type, ('parameter', [0, 100, 2]), where the 'parameter' is the param_type and the [0, 100, 2]
+        corresponds to [minimum. maximum, default value].
 
         Args:
             key: str, parameter name.
@@ -109,9 +117,13 @@ class ParameterVault(LabradServer):
 
         # Error strings
         parameter_bound = "Parameter {} Out of Bound"
-        bad_selection = "Inorrect selection made in {}"
+        bad_selection = "Incorrect selection made in {}"
 
         if param_type == 'parameter' or param_type == 'duration_bandwidth':
+            try:
+                item, units = item
+            except:
+                pass
             assert item[0] <= item[2] <= item[1], parameter_bound.format(key)
             return item[2]
 
@@ -128,11 +140,15 @@ class ParameterVault(LabradServer):
             return item
 
         elif param_type == 'scan':
+            try:
+                item, units = item
+            except:
+                pass
             minim, maxim = item[0]
             start, stop, steps = item[1]
             assert minim <= start <= maxim, parameter_bound.format(key)
             assert minim <= stop <= maxim, parameter_bound.format(key)
-            return (start, stop, steps)
+            return start, stop, steps
 
         elif param_type == 'selection_simple':
             assert item[0] in item[1], bad_selection.format(key)
@@ -149,7 +165,24 @@ class ParameterVault(LabradServer):
              full_info='b', returns='')
     def setParameter(self, c, collection, parameter_name, value,
                      full_info=False):
-        """Sets Parameter."""
+        """
+        Sets Parameter.
+
+        :param: collection: string, directory of the parameter
+        :param: parameter_name: string, name (key) of the parameter
+        :param: value: Any, value of the parameter
+        :param: full_info: boolean
+
+        Usage:
+
+        .. code-block:: python
+            :linenos:
+
+            cxn = labrad.connect()
+            pv = cxn.parametervault
+            # Below code sets 8 to parameter 'x' in the 'sideband_selection' collection
+            pv.set_parameters('sideband_selection', 'x', 8)
+        """
         key = (collection, parameter_name)
         if key not in self.parameters:
             raise Exception(str(key) + " Parameter Not Found")
@@ -163,7 +196,15 @@ class ParameterVault(LabradServer):
     @setting(1, "Get Parameter", collection='s', parameter_name='s',
              checked='b', returns=['?'])
     def getParameter(self, c, collection, parameter_name, checked=True):
-        """Gets Parameter Value."""
+        """
+        Gets Parameter Value.
+
+        :param: collection: string, directory of the parameter
+        :param: parameter_name: string, name (key) of the parameter
+        :param: checked: boolean
+
+        :return: value: List of any type, value of the parameter
+        """
         key = (collection, parameter_name)
         if key not in self.parameters:
             raise Exception(str(key) + "  Parameter Not Found")
@@ -174,29 +215,48 @@ class ParameterVault(LabradServer):
 
     @setting(2, "Get Parameter Names", collection='s', returns='*s')
     def getParameterNames(self, c, collection):
-        """Gets Parameter Names."""
+        """
+        Gets Parameter Names specified by the input collections.
+
+        :param collection: string, directory of the parameter
+
+        :return: value: string, value of the parameter
+        """
         parameter_names = self._get_parameter_names(collection)
         return parameter_names
 
     @setting(3, "Save Parameters To Registry", returns='')
     def saveParametersToRegistry(self, c):
-        """Gets Experiment Parameter Names."""
+        """
+        Save parameters to registry.
+
+        """
         yield self.save_parameters()
 
     @setting(4, "Get Collections", returns='*s')
     def get_collection_names(self, c):
+        """
+        Get all the collections in the registry.
+
+        """
         collections = self._get_collections()
         return collections
 
     @setting(5, "Refresh Parameters", returns='')
     def refresh_parameters(self, c):
-        """Saves Parameters To Registry, then realods them."""
+        """
+        Saves Parameters To Registry, then reloads them.
+
+        """
         yield self.save_parameters()
         yield self.load_parameters()
 
     @setting(6, "Reload Parameters", returns='')
     def reload_parameters(self, c):
-        """Discards current parameters and reloads them from registry."""
+        """
+        Discards current parameters and reloads them from registry.
+
+        """
         yield self.load_parameters()
 
     @inlineCallbacks
@@ -204,7 +264,7 @@ class ParameterVault(LabradServer):
         try:
             yield self.save_parameters()
         except AttributeError:
-            # if values don't exist yet, i.e stopServer was called due to an
+            # if values don't exist yet, i.e. stopServer was called due to an
             # Identification Error
             pass
 

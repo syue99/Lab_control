@@ -78,7 +78,7 @@ if scan_var == 'freq':
 
 #scripts for the scanning part. For now we will send a trigger pulser of 1ms from the TTL1 chanel of the pulser once it is runned
 class microwave_scan(experiment):
-    name = 'MicrowaveRabiScan'
+    name = 'MicrowaveRabiScan222'
     parameter_name = "DDS Freq"
     required_parameters = [('collection1', 'ramp_time'),
     ]
