@@ -3,10 +3,12 @@ sys.path.append('../../experiment_scripts/')
 class config(object):
 
     # list in the format (import_path, class_name)
-    scripts = [('PMT_AOM_power_calibration',
-                'PMTAOMPowerCalibration'), 
-                ('Raman_microwave_scan_coherence',
-                'microwave_scan')
+    scripts = [
+               ('test_experiment',
+                'NIcard_scan'),
+    
+                ('test_experiment_phase',
+                'rydberg_experiment'),
                 ]
 
     allowed_concurrent = {

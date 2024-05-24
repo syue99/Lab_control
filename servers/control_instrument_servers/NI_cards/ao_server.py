@@ -3,7 +3,7 @@ import dill as pickle
 import numpy
 import numpy as np
 from labrad.server import LabradServer, setting
-
+import time
 
 def flatPulse(t, args, idx):
     w = args['durationList'][idx]
@@ -25,12 +25,11 @@ class AOServer(LabradServer):
     nCh = 28
     targetSampleRate = 250e3
 
-    channel_string = "Dev3/ao0:27"
+    channel_string = "PXI1Slot2/ao0:27"
 
     def initServer(self):
         self.sampleClockDivider = int(round(1e7 / self.targetSampleRate))
         self.sampleRate = 1e7 / self.sampleClockDivider
-
         print("Initializing AO server. Sample rate = %f Hz. Divider = %d" % (self.sampleRate, self.sampleClockDivider))
         pass
 
@@ -48,7 +47,7 @@ class AOServer(LabradServer):
             print("Error: channel (%d) out of range" % ch)
             return
 
-        vinVolts = v['V']
+        vinVolts = v#['V']
 
         if vinVolts < -10.0 or vinVolts > 10.0:
             print("Error: Voltage (%f) out of range" % vinVolts)
@@ -268,8 +267,9 @@ class AOServer(LabradServer):
                 ampList[i] * np.sin(
                     2 * np.pi * freqList[i] * (tList[start_sample:start_sample + duration_sample]  # )+phaseList[i])
                                                - tList[int(startTime_s[0] * self.sampleRate)]) + phaseList[i])
-
+        #print(wave)
         self.data[ch, start_idx:start_idx + len(wave)] = wave
+        
         return wave
 
     @setting(15, 'ArbWaveMod', ch='i', t_start='v[]', t_len='v[]', filename='s')
@@ -341,6 +341,84 @@ class AOServer(LabradServer):
 
         return wave
 
+    @setting(96, 'ArbWave_offset', ch='i', t_start='v[]', t_len='v[]', ampList='*v',offset_ampList='*v', freqList='*v', phaseList='*v',
+             pulseDuration='*v', waitTime='*v')
+    def ArbWave_offset(self, c, ch, t_start, t_len, ampList, offset_ampList, freqList, phaseList, pulseDuration, waitTime):
+        """ turn on ch from t_start to t_start + t_len """
+
+        # round these to nearest integers
+        start_idx = int(t_start * self.sampleRate)
+
+        tList = np.arange(0, t_len, 1 / float(self.sampleRate))
+        startTime_s = waitTime[0] + np.concatenate(([0], np.cumsum(pulseDuration[:-1] + waitTime[1:])))
+        duration_s = pulseDuration
+
+        nPulses = len(pulseDuration)
+        ampList = np.clip(ampList, 0, 3)
+        wave = np.zeros_like(tList)
+        for i in range(nPulses):
+            start_sample = int(startTime_s[i] * self.sampleRate)
+            duration_sample = int(duration_s[i] * self.sampleRate)
+            # tList has shape 2630
+            # print(tList[start_sample:start_sample + duration_sample], tList[start_sample:start_sample + duration_sample].shape)
+            wave[start_sample:start_sample + duration_sample] = \
+                offset_ampList[i]/10 + ampList[i]/10 * np.sin(
+                    2 * np.pi * freqList[i] * (tList[start_sample:start_sample + duration_sample]  # )+phaseList[i])
+                                               - tList[int(startTime_s[0] * self.sampleRate)]) + phaseList[i])
+        #print(wave)
+        self.data[ch, start_idx:start_idx + len(wave)] = wave
+        
+        return wave
+    
+    @setting(95, 'BH_Window_function', ch='i', t_start='v[]', t_len='v[]', ampList='*v', aList = '*v', pulseDuration='*v', waitTime='*v')
+    def BH_Window_function(self, c, ch, t_start, t_len, ampList, aList, pulseDuration, waitTime):
+        """ turn on ch from t_start to t_start + t_len """
+
+        # round these to nearest integers
+        start_idx = int(t_start * self.sampleRate)
+
+        tList = np.arange(0, t_len, 1 / float(self.sampleRate))
+        startTime_s = waitTime[0] + np.concatenate(([0], np.cumsum(pulseDuration[:-1] + waitTime[1:])))
+        duration_s = pulseDuration
+
+        nPulses = len(pulseDuration)
+        ampList = np.clip(ampList, 0, 3)
+        wave = np.zeros_like(tList)
+
+        for i in range(nPulses):
+            start_sample = int(startTime_s[i] * self.sampleRate)
+            duration_sample = int(duration_s[i] * self.sampleRate) #tau
+            initial_offset = tList[int(startTime_s[0] * self.sampleRate)]
+
+            time_0 = start_sample
+            time_1 = start_sample + int((aList[i] * duration_sample) / 2)
+            time_2 = start_sample + int(duration_sample * (1 - aList[i] / 2))
+            time_3 = start_sample + duration_sample
+
+            wave[time_0:time_1] = ampList[i]/2/10 * (1 - np.cos(2 * np.pi * (tList[time_0:time_1] - initial_offset) / (aList[i] * duration_s[i])))
+            wave[time_1:time_2] = [ampList[i]/10] * (time_2 - time_1)
+            wave[time_2:time_3] = ampList[i]/2/10 * (1 - np.cos(2 * np.pi * (tList[time_2:time_3] - initial_offset) / (aList[i] * duration_s[i])))
+
+        #print((tList[time_0:time_1] - initial_offset) / (aList[i] * duration_s[i]))
+        #print('hi')
+        self.data[ch, start_idx:start_idx + len(wave)] = wave
+        
+        return wave
+    """
+        def sigma_phi_tukey(phi,pt):
+        cycle_time = int(4*nor/500)
+        #set alpha for tukey pulse
+        alpha = 0.3
+        l=int(alpha*(len(pt)-4*cycle_time))
+        wf = np.zeros(len(pt))
+        wf[:l] = 1/2*(1-np.cos(np.pi*pt[:l]/(l)))*np.cos(2*np.pi*pt[:l]*125/500+phi)
+        wf[l:-4*cycle_time-l] = np.cos(2*np.pi*pt[l:-4*cycle_time-l]*125/500+phi)
+        wf[-4*cycle_time-l:-4*cycle_time] = 1/2*(1-np.cos(np.pi*pt[l:2*l]/(l)))*np.cos(2*np.pi*pt[-4*cycle_time-l:-4*cycle_time]*125/500+phi)
+        wf[-4*cycle_time:] = 0
+        return wf
+    
+    
+    """
     @setting(8, 'runWaveform', numloops='i')
     def runWaveform(self, c, numloops):  # first, cleanup any old tasks
 
@@ -366,9 +444,9 @@ class AOServer(LabradServer):
         # int32 DAQmxCreateCOPulseChanTicks (TaskHandle taskHandle, const char counter[], const char nameToAssignToChannel[], const char sourceTerminal[], int32 idleState, int32 initialDelay, int32 lowTicks, int32 highTicks);
         self._check(
             PyDAQmx.DAQmxCreateCOPulseChanTicks(self.taskHandleClk,
-                                                "/Dev3/ctr0",
+                                                "/PXI1Slot2/ctr0",
                                                 "",
-                                                "/Dev3/PXI_Trig7",
+                                                "/PXI1Slot2/PXI_Trig7",
                                                 PyDAQmx.DAQmx_Val_Low,
                                                 0,
                                                 2,
@@ -386,13 +464,13 @@ class AOServer(LabradServer):
 
         # # int32 __CFUNC DAQmxSetCOCtrTimebaseSrc(TaskHandle taskHandle, const char channel[], const char *data);
         # self._check(PyDAQmx.DAQmxSetCOCtrTimebaseSrc(self.taskHandleClk,
-        #                                              '/Dev3/ctr0',
-        #                                              "/Dev3/PXI_Trig7"
+        #                                              '/PXI1Slot2/ctr0',
+        #                                              "/PXI1Slot2/PXI_Trig7"
         #                                              ))
 
         # int32 DAQmxCfgDigEdgeStartTrig (TaskHandle taskHandle, const char triggerSource[], int32 triggerEdge);
         self._check(PyDAQmx.DAQmxCfgDigEdgeStartTrig(self.taskHandleClk,
-                                                     '/Dev3/PXI_Trig1',  # source
+                                                     '/PXI1Slot2/PXI_Trig1',  # source
                                                      PyDAQmx.DAQmx_Val_Rising,  # activeEdge
                                                      ))
 
@@ -413,7 +491,7 @@ class AOServer(LabradServer):
 
         # int32 __CFUNC     DAQmxCfgSampClkTiming          (TaskHandle taskHandle, const char source[], float64 rate, int32 activeEdge, int32 sampleMode, uInt64 sampsPerChan);
         self._check(PyDAQmx.DAQmxCfgSampClkTiming(self.taskHandle,
-                                                  '/Dev3/Ctr0InternalOutput',  # source
+                                                  '/PXI1Slot2/Ctr0InternalOutput',  # source
                                                   ctypes.c_double(self.sampleRate),  # rate
                                                   PyDAQmx.DAQmx_Val_Rising,  # activeEdge
                                                   PyDAQmx.DAQmx_Val_FiniteSamps,  # sampleMode # continuous sampling
@@ -422,11 +500,12 @@ class AOServer(LabradServer):
 
         # int32 DAQmxCfgDigEdgeStartTrig (TaskHandle taskHandle, const char triggerSource[], int32 triggerEdge);
         # self._check(PyDAQmx.DAQmxCfgDigEdgeStartTrig(self.taskHandle,
-        #                                          '/Dev3/PXI_Trig1',  # source
+        #                                          '/PXI1Slot2/PXI_Trig1',  # source
         #                                          PyDAQmx.DAQmx_Val_Rising,  # activeEdge
         #                                          ))
 
         print("Using Finite Samples")
+        print(numloops * self.nPoints)
 
         self._check(PyDAQmx.DAQmxSetWriteRegenMode(self.taskHandle, PyDAQmx.DAQmx_Val_AllowRegen))
 
@@ -447,15 +526,23 @@ class AOServer(LabradServer):
 
         # DAQmxExportSignal(self.taskHandle, DAQmx_Val_SampleClock, '/PXI1Slot3/PXI_Trig7')
         # DAQmxExportSignal(self.taskHandle, DAQmx_Val_StartTrigger, '/PXI1Slot3/PXI_Trig6')
-        # pydaqmx.DAQmxExportSignal(self.taskHandle, self.internalClk, self.externalClk)
-        # pydaqmx.DAQmxExportSignal(self.taskHandle, self.internalTrig, self.externalTrig)
+        #PyDAQmx.DAQmxExportSignal(self.taskHandle, self.internalClk, self.externalClk)
+        #PyDAQmx.DAQmxExportSignal(self.taskHandle, self.internalTrig, self.externalTrig)
         # pydaqmx
 
         self._check(PyDAQmx.DAQmxStartTask(self.taskHandle))
 
         # time.sleep(self.loopperiod)
 
-        # time.sleep(10)
+        #time.sleep(10)
+    @setting(97, 'returnData')
+    def returnData(self, c):
+        try:
+            data = self.data
+        except:
+            data = []
+        return data
+    
 
     @setting(98, 'saveData', ch='i', path='s')
     def saveData(self, c, ch, path):

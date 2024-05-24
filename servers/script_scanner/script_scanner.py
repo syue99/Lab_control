@@ -19,12 +19,15 @@ from labrad.server import setting
 from labrad.units import WithUnit
 from twisted.internet.defer import inlineCallbacks, DeferredList, returnValue
 from script_signals_server import ScriptSignalsServer
-#try:
+# try:
 #    import config.scriptscanner_config as sc_config
-#except BaseException:
+# except BaseException:
 import sys
-sys.path.append('../../config')
-import scriptscanner_config as sc_config
+
+#sys.path.insert(1, '/path/to/application/app/folder')
+sys.path.append('../../experiment_scripts')
+sys.path.append("../../config")
+# import config_lab_dev.scriptscanner_config as sc_config
 import scan_methods
 from scheduler import scheduler
 import sys
@@ -80,7 +83,8 @@ class ScriptScanner(ScriptSignalsServer):
     @inlineCallbacks
     def load_scripts(self):
         """Loads script information from the configuration file."""
-
+        #try to reload config file
+        import scriptscanner_config as sc_config
         self.allowed_concurrent = {}
         scripts = []
         reg_path = ["", "Servers", self.name]
@@ -111,11 +115,29 @@ class ScriptScanner(ScriptSignalsServer):
                 self.allowed_concurrent[experiment[1]] = experiment[2]
 
         scripts = list(set(scripts))
+        print(scripts)
+        #the import_path variable seems to be quite confusing
         for import_path, class_name in scripts:
+            print(import_path, class_name)
             try:
-                __import__(import_path)
+                print("reloading modules")
                 module = sys.modules[import_path]
+                print("reloading modules"+str(module))
+                module = importlib.reload(module)
+                print("reloading modules")
                 cls = getattr(module, class_name)
+                print(cls)
+            except KeyError as e:
+                print("loading modules")
+                print(import_path)
+                __import__(import_path)
+                print("ll")
+                module = sys.modules[import_path]
+                print(module)
+                cls = getattr(module, class_name)
+                print(cls)
+                print("finished loading modules")
+
             except ImportError as e:
                 print('Script Control Error importing: ', e)
             except AttributeError:
@@ -123,15 +145,20 @@ class ScriptScanner(ScriptSignalsServer):
             except SyntaxError as e:
                 print('Incorrect syntax in file {0}'.format(import_path, class_name))
             except Exception as e:
+                print(e)
                 print('There was an error in {0} : {1}'.format(class_name, e))
-            else:
+            finally:
                 try:
                     name = cls.name
                     parameters = cls.all_required_parameters()
+                    print(parameters)
                 except AttributeError:
                     name_not_provided = 'Name is not provided for class {0} in'
                     name_not_provided += ' module {1}'
                     print(name_not_provided.format(class_name, module))
+                except Exception as e:
+                    print(e)
+                    print('There was an error in {0} : {1}'.format(class_name, e))
                 else:
                     self.script_parameters[name] = script_class_parameters(name, cls, parameters)
 
@@ -240,7 +267,7 @@ class ScriptScanner(ScriptSignalsServer):
         like add_new_experiment_to_queue.
 
         Args:
-            script: str, experiment to run.
+            script_name: str, experiment to run.
 
         Returns:
             scan_id: int.
@@ -256,6 +283,24 @@ class ScriptScanner(ScriptSignalsServer):
         scan_id = self.scheduler.add_scan_to_queue(single_launch)
         return scan_id
 
+#changed by Fred for sequence plotter
+#we basically add a program_main_sequence method in single.py file so that it can excute the program_main_sequence method 
+#in the experiment for compiling the pulse sequence
+
+    @setting(38, 'new_experiment_sequence', script_name='s', returns='w')
+    def new_experiment_sequence(self, c, script_name):
+        if script_name not in self.script_parameters:
+            raise Exception("Script {} Not Found".format(script_name))
+        # Grabs an instance of script_class_parameters that holds
+        # the experiment name, the experiment class, and the list of
+        # required parameters for the experiment.
+        script = self.script_parameters[script_name]
+        # single_launch is an experiment instance.
+        single_launch = scan_methods.single_sequence(script.cls)
+        scan_id = self.scheduler.add_scan_to_queue(single_launch)
+        return scan_id
+    
+
     @setting(11, "new_script_repeat", script_name='s', repeat='w',
              save_data='b')
     def new_script_repeat(self, c, script_name, repeat, save_data=True):
@@ -267,22 +312,62 @@ class ScriptScanner(ScriptSignalsServer):
 
         scan_id = self.scheduler.add_scan_to_queue(repeat_launch)
         return scan_id
-
+#Fred: Very confused on why we have a measure_script, I do not think this is necessary
     @setting(12, "new_script_scan", scan_script_name='s',
              measure_script_name='s', collection='s', parameter_name='s',
              minim='v[]', maxim='v[]', steps='w', units='s')
     def new_scan(self, c, scan_script_name, measure_script_name, collection,
                  parameter_name, minim, maxim, steps, units):
-        # need error checking that parmaters are valid
+        # need error checking that parameters are valid
         if scan_script_name not in self.script_parameters:
             raise Exception("Script {} Not Found".format(scan_script_name))
         if measure_script_name not in self.script_parameters:
             raise Exception("Script {} Not Found".format(measure_script_name))
         scan_script = self.script_parameters[scan_script_name]
         measure_script = self.script_parameters[measure_script_name]
+        #parameter = []
+        #for i in range(len(collection)):
+        #    parameter.append((collection[i],parameter_name[i]))
         parameter = (collection, parameter_name)
+        #print(parameter)
         if scan_script == measure_script:
-            scan_launch = scan_methods.scan_experiment_1D(scan_script.cls,
+            #print("mew")
+            scan_launch = scan_methods.scan_experiment(scan_script.cls,
+                                                          parameter, minim,
+                                                          maxim, steps, units)
+            #scan_launch = scan_methods.scan_experiment_1D_camera_sc(scan_script.cls,
+            #                                              parameter, minim,
+            #                                              maxim, steps, units)
+        else:
+            #print("wem")
+            scan_launch = scan_methods.scan_experiment_1D_measure(
+                scan_script.cls, measure_script.cls, parameter, minim, maxim,
+                steps, units)
+        scan_id = self.scheduler.add_scan_to_queue(scan_launch)
+        return scan_id
+#we add a n-dimensional scan feature, the idea is to replace orignal collection, parameter_name structure to a list of tuple of parameters
+#we are thinking about using this for more general scan so that new_script_scan can be depreciated in the future
+#also, measure script can be depreicated in the future
+    @setting(16, "new_nd_script_scan", scan_script_name='s',
+             measure_script_name='s', parameter='?',
+             minim='v[]', maxim='v[]', steps='w', units='s')
+    def new_nd_scan(self, c, scan_script_name, measure_script_name, parameter, minim, maxim, steps, units):
+        # need error checking that parameters are valid
+        if scan_script_name not in self.script_parameters:
+            raise Exception("Script {} Not Found".format(scan_script_name))
+        if measure_script_name not in self.script_parameters:
+            raise Exception("Script {} Not Found".format(measure_script_name))
+        scan_script = self.script_parameters[scan_script_name]
+        measure_script = self.script_parameters[measure_script_name]
+        parameter = list(parameter)
+        #parameter = []
+        #for i in range(len(collection)):
+        #    parameter.append((collection[i],parameter_name[i]))
+        #parameter = (collection, parameter_name)
+        #print(parameter)
+        if scan_script == measure_script:
+            #print("mew")
+            scan_launch = scan_methods.scan_experiment(scan_script.cls,
                                                           parameter, minim,
                                                           maxim, steps, units)
         else:
@@ -291,14 +376,14 @@ class ScriptScanner(ScriptSignalsServer):
                 steps, units)
         scan_id = self.scheduler.add_scan_to_queue(scan_launch)
         return scan_id
-
+    
     @setting(13, 'new_script_schedule', script_name='s', duration='v[s]',
              priority='s', start_now='b', returns='w')
     def new_script_schedule(self, c, script_name, duration, priority='Normal',
                             start_now=True):
-        """Schedule the script to run every spcified duration of seconds.
+        """Schedule the script to run every specified duration of seconds.
 
-        Priority indicates the priority with which the scrpt is scheduled.
+        Priority indicates the priority with which the script is scheduled.
         """
         if script_name not in self.script_parameters:
             raise Exception("Script {} Not Found".format(script_name))
@@ -315,7 +400,7 @@ class ScriptScanner(ScriptSignalsServer):
     @setting(14, 'change_scheduled_duration', scheduled_ID='w',
              duration='v[s]')
     def change_scheduled_duration(self, c, scheduled_ID, duration):
-        """Changes duration of the scheduled script executation."""
+        """Changes duration of the scheduled script execution."""
         self.scheduler.change_period_scheduled_script(scheduled_ID,
                                                       duration['s'])
 
@@ -417,6 +502,7 @@ class ScriptScanner(ScriptSignalsServer):
 
     @setting(37, "reload_available_scripts")
     def reload_available_scripts(self, c):
+        import scriptscanner_config as sc_config
         reload_module(sc_config)
         self.script_parameters = {}
         yield self.load_scripts()
@@ -445,4 +531,5 @@ class ScriptScanner(ScriptSignalsServer):
 
 if __name__ == "__main__":
     from labrad import util
+
     util.runServer(ScriptScanner())

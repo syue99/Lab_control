@@ -81,29 +81,50 @@ class ParameterNode(Node):
         self._collection = parent.name()
         self.set_full_info(info)
 
+
+    #def set_full_info(self, info):
+        #try:
+            #self._units = info[2].units
+            #self._min = info[0][self._units]
+            #self._max = info[1][self._units]
+            #self._value = info[2][self._units]
+        #except AttributeError:
+            # unitless
+            #self._units = ''
+            #self._min = info[0]
+            #self._max = info[1]
+            #self._value = info[2]
+
+
     def set_full_info(self, info):
         try:
-            self._units = info[2].units
-            self._min = info[0][self._units]
-            self._max = info[1][self._units]
-            self._value = info[2][self._units]
-        except AttributeError:
-            # unitless
+            para_info, self._units = info
+        except:
+            para_info = info
             self._units = ''
-            self._min = info[0]
-            self._max = info[1]
-            self._value = info[2]
+        self._min = para_info[0]
+        self._max = para_info[1]
+        self._value = para_info[2]
 
     def path(self):
         return (self._collection, self.name())
 
+    '''
     def full_parameter(self):
         if self._units:
             WithUnit = self.WithUnit
             return ('parameter', [WithUnit(self._min, self._units), WithUnit(
                 self._max, self._units), WithUnit(self._value, self._units)])
         else:
-            return ('parameter', [self._min, self._max, self._value])
+            #return ('parameter', [self._min, self._max, self._value])
+            return ('parameter', (self._min, self._max, self._value))
+    '''
+
+    def full_parameter(self):
+        if self._units:
+            return ('parameter', ((self._min, self._max, self._value), self._units))
+        else:
+            return ('parameter', (self._min, self._max, self._value))
 
     def data(self, column):
         if column < 1:
@@ -292,27 +313,46 @@ class ScanNode(Node):
         self._collection = parent.name()
         self.set_full_info(info)
 
+    '''
     def set_full_info(self, info):
         limit_info, scan_info = info
+        #limit_info, scan_info, self._units = info
         try:
             self._units = limit_info[0].units
         except BaseException:
             self._units = None
+
         if self._units:
             self._min = limit_info[0][self._units]
             self._max = limit_info[1][self._units]
             self._scan_start = scan_info[0][self._units]
             self._scan_stop = scan_info[1][self._units]
+            self._scan_points = scan_info[2]
         else:
             self._min = limit_info[0]
             self._max = limit_info[1]
             self._scan_start = scan_info[0]
             self._scan_stop = scan_info[1]
+            self._scan_points = scan_info[2]
+    '''
+
+    def set_full_info(self, info):
+        try:
+            limit_info, scan_info, self._units = info
+        except:
+            limit_info, scan_info = info
+            self._units = None
+        self._min = limit_info[0]
+        self._max = limit_info[1]
+        self._scan_start = scan_info[0]
+        self._scan_stop = scan_info[1]
         self._scan_points = scan_info[2]
+
 
     def path(self):
         return (self._collection, self.name())
 
+    '''
     def full_parameter(self):
         WithUnit = self.WithUnit
         if self._units:
@@ -322,6 +362,18 @@ class ScanNode(Node):
                              ))
         else:
             return ('scan', ([self._min, self._max],
+                             (self._scan_start, self._scan_stop, self._scan_points)
+                             ))
+    '''
+
+    def full_parameter(self):
+        if self._units:
+            return ('scan', ((self._min, self._max),
+                             (self._scan_start, self._scan_stop, self._scan_points),
+                             self._units
+                             ))
+        else:
+            return ('scan', ((self._min, self._max),
                              (self._scan_start, self._scan_stop, self._scan_points)
                              ))
 

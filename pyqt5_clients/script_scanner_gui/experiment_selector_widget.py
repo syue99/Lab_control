@@ -28,6 +28,7 @@ class scan_dialog(QtWidgets.QDialog, dialog_ui):
         index = self.parameter.currentIndex()
         collection, parameter = self.parameter.itemData(index)
         return (collection, parameter)
+        #return parameter
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Enter:
@@ -37,14 +38,20 @@ class scan_dialog(QtWidgets.QDialog, dialog_ui):
 
     def setup_layout(self, selected, experiment_list, parameter_info):
         self.scan.setText(selected)
-        self.measure.addItems(experiment_list)
+        #self.measure.addItems(experiment_list)
         self.process_parameter_info(parameter_info)
+        self.process_2D_scan_parameter_info(parameter_info)
+
+    def process_2D_scan_parameter_info(self, info):
+        for collection, parameter, minim, maxim, start, stop, steps, units in sorted(info):
+            self.measure.addItem(collection + ' : ' + parameter,
+                                   userData=(collection, parameter))
 
     def process_parameter_info(self, info):
-        for collection, parameter, minim, maxim, units in sorted(info):
+        for collection, parameter, minim, maxim, start, stop, steps, units in sorted(info):
             self.parameter.addItem(collection + ' : ' + parameter,
                                    userData=(collection, parameter))
-            self.parameter_info[(collection, parameter)] = (minim, maxim, units)
+            self.parameter_info[(collection, parameter)] = (minim, maxim, start, stop, steps, units)
 
     def connect_layout(self):
         self.uiDecimals.valueChanged.connect(self.on_new_decimals)
@@ -62,15 +69,19 @@ class scan_dialog(QtWidgets.QDialog, dialog_ui):
 
     def on_parameter_picked(self, index):
         collection, parameter = self.parameter.itemData(index)
-        minim, maxim, units = self.parameter_info[(collection, parameter)]
+        #minim, maxim, units = self.parameter_info[(collection, parameter)]
+        minim, maxim, start, stop, steps, units= self.parameter_info[(collection, parameter)]
         self.set_suffix(units)
         self.uiMin.setValue(minim)
         self.uiMax.setValue(maxim)
+        self.uiStart.setValue(start)
+        self.uiStop.setValue(stop)
+        self.uiSteps.setValue(steps)
         self.set_minimum(minim)
         self.set_maximum(maxim)
 
     def on_same_checked(self, checked):
-        self.measure.setDisabled(checked)
+        self.measure.setDisabled(not checked)
         index = self.measure.findText(self.scan.text())
         self.measure.setCurrentIndex(index)
 
@@ -330,6 +341,7 @@ class experiment_selector_widget(QtWidgets.QWidget):
             stop = dialog.uiStop.value()
             steps = dialog.uiSteps.value()
             units = dialog.uiStart.suffix()
+            #units = "MHz"
             self.on_scan.emit(scan, measure, parameter,
                               start, stop, steps, units)
 

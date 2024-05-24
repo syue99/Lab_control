@@ -1,6 +1,8 @@
 from time import localtime, strftime
-
+import numpy as np
 from experiment import experiment
+import matplotlib.pyplot as plt
+
 
 
 class repeat_reload(experiment):
@@ -10,6 +12,7 @@ class repeat_reload(experiment):
         self.script_cls = script_cls
         self.repetitions = repetitions
         self.save_data = save_data
+        #self.data = []
         scan_name = self.name_format(script_cls.name)
         super(repeat_reload, self).__init__(scan_name)
 
@@ -17,6 +20,7 @@ class repeat_reload(experiment):
         return 'Repeat {0} {1} times'.format(name, self.repetitions)
 
     def initialize(self, cxn, context, ident):
+        #self.data = np.array(self.data)
         self.script = self.make_experiment(self.script_cls)
         self.script.initialize(cxn, context, ident)
         if self.save_data:
@@ -29,11 +33,13 @@ class repeat_reload(experiment):
             self.script.reload_all_parameters()
             self.script.set_progress_limits(
                 100.0 * i / self.repetitions, 100.0 * (i + 1) / self.repetitions)
-            result = self.script.run(cxn, context)
+            result = self.script.run(cxn, context, )
             if self.script.should_stop:
                 return
             if self.save_data and result is not None:
                 cxn.data_vault.add([i, result], context=context)
+                #self.data.append([i, result])
+                #np.append(self.data, result)
             self.update_progress(i)
 
     def navigate_data_vault(self, cxn, context):
@@ -53,4 +59,15 @@ class repeat_reload(experiment):
         self.sc.script_set_progress(self.ident, progress)
 
     def finalize(self, cxn, context):
+        #self.data = np.array(self.data)
+        #tempdata = self.data
+        # print(tempdata)
+        #plt.hist(tempdata, bins=200)
+
+        #plt.title("Repeat " + self.script.name + " " + str(self.repetitions) + " times")
+        #plt.xlabel("PMT count")
+        #plt.ylabel("Count number")
+
+        #plt.show()
         self.script.finalize(cxn, context)
+

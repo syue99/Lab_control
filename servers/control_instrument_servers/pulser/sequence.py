@@ -2,11 +2,13 @@ import numpy
 import array
 from six import iteritems
 from builtins import range
-
-try:
-    from config.pulser.hardwareConfiguration import hardwareConfiguration
-except BaseException:
-    from pydux.lib.config.pulser.hardwareConfiguration import hardwareConfiguration
+import sys
+sys.path.append('../../../config/pulser/')
+from hardwareConfiguration import hardwareConfiguration
+#try:
+#    from config.pulser.hardwareConfiguration import hardwareConfiguration
+#except BaseException:
+#    from pydux.lib.config.pulser.hardwareConfiguration import hardwareConfiguration
 
 from decimal import Decimal
 

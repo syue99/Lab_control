@@ -67,7 +67,8 @@ class scan_experiment_1D_camera(experiment):
         for text in directory:
             self.dirc=self.dirc+text+'.dir/'
         dv.cd(directory, True, context=context)
-        dv.newmatrix(dataset_name, (1,200), 'f', context=context)
+        #dv.newmatrix(dataset_name, (1,200), 'f', context=context)
+        dv.newmatrix(dataset_name, (1, 1600), 'f', context=context)
         dv.add_parameter('plotLive', True, context=context)
         for para in parameter.keys():
             dv.add_parameter(para, parameter[para], context=context)
@@ -76,7 +77,8 @@ class scan_experiment_1D_camera(experiment):
             dv.add_parameter(para,self.script.parameters[para], context=context)
         #add scan points to the first element of the dataset_name
         # we set 300 as this is very close to the background noise
-        scan_para = np.ones((1,200))*300
+        #scan_para = np.ones((1,200))*300
+        scan_para = np.ones((1, 1600)) * 300
         #print(self.scan_points)
         scan_para[0,0] += self.scan_points[0][self.units]
         scan_para[0,1] += self.scan_points[len(self.scan_points)-1][self.units]

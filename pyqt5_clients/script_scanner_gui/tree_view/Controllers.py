@@ -44,12 +44,13 @@ class ParametersEditor(base, form):
             node = self._model.insert_parameter(parameter_name, info,
                                                 collection_node)
             self._parameter[collection_name, parameter_name] = node
-            self._scannable_parameter[collection_name, parameter_name] = node
+            #self._scannable_parameter[collection_name, parameter_name] = node
         elif value_type == 'scan':
             collection_node = self._collection[collection_name]
             node = self._model.insert_scan(parameter_name, info,
                                            collection_node)
             self._parameter[collection_name, parameter_name] = node
+            self._scannable_parameter[collection_name, parameter_name] = node
         elif value_type == 'bool':
             collection_node = self._collection[collection_name]
             node = self._model.insert_bool(parameter_name, info,
@@ -113,8 +114,11 @@ class ParametersEditor(base, form):
                 parameter_node = index.internalPointer()
                 minim = parameter_node.data(3)
                 maxim = parameter_node.data(4)
-                units = parameter_node.data(6)
-                scannable.append((collection, param, minim, maxim, units))
+                start = parameter_node.data(5)
+                stop = parameter_node.data(6)
+                steps = parameter_node.data(7)
+                units = parameter_node.data(8)
+                scannable.append((collection, param, minim, maxim, start, stop, steps, units))
         return scannable
 
     def setup_model(self):

@@ -29,7 +29,7 @@ class scan_experiment_1D_measure(experiment):
         self.measure_script.initialize(cxn, context, ident)
         self.navigate_data_vault(cxn, self.parameter, context)
 
-    def run(self, cxn, context):
+    def run(self, cxn, context, **kwargs):
         for i, scan_value in enumerate(self.scan_points):
             if self.pause_or_stop():
                 return
@@ -37,12 +37,12 @@ class scan_experiment_1D_measure(experiment):
             self.scan_script.set_parameters({('para1',"para2"): scan_value})
             self.scan_script.set_progress_limits(
                 100.0 * i / len(self.scan_points), 100.0 * (i + 0.5) / len(self.scan_points))
-            self.scan_script.run(cxn, context, scan_value)
+            self.scan_script.run(cxn, context, )
             if self.scan_script.should_stop:
                 return
             self.measure_script.set_progress_limits(
                 100.0 * (i+0.5) / len(self.scan_points), 100.0 * (i + 1) / len(self.scan_points))
-            result = self.measure_script.run(cxn, context)
+            result = self.measure_script.run(cxn, context, )
             if self.measure_script.should_stop:
                 return
             if result is not None:

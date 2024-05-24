@@ -158,6 +158,9 @@ class ParameterVault(LabradServer):
             assert item[0] in dict(item[1]), bad_selection.format(key)
             return item[0]
 
+        elif param_type == 'list':  
+            return item
+        
         else:  # parameter type not known
             return value
 

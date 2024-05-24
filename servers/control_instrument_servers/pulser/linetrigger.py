@@ -1,11 +1,13 @@
 from labrad.server import LabradServer, setting, Signal
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
-
-try:
-    from config.pulser.hardwareConfiguration import hardwareConfiguration
-except BaseException:
-    from pydux.lib.config.pulser.hardwareConfiguration import hardwareConfiguration
+import sys
+sys.path.append('../../../config/pulser/')
+from hardwareConfiguration import hardwareConfiguration
+#try:
+#    from config.pulser.hardwareConfiguration import hardwareConfiguration
+#except BaseException:
+#    from pydux.lib.config.pulser.hardwareConfiguration import hardwareConfiguration
 
 from labrad.units import WithUnit
 

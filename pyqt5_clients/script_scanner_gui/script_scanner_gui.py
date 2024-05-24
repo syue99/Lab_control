@@ -1,11 +1,9 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 from twisted.internet.defer import inlineCallbacks
-from pydux.lib.control.clients.script_scanner_gui.\
-    scripting_widget import scripting_widget
-from pydux.lib.control.clients.connection import connection
-from pydux.lib.control.clients.script_scanner_gui.\
-    tree_view.Controllers import ParametersEditor
-
+from scripting_widget import scripting_widget
+from pyqt4_clients.connection import connection
+from tree_view.Controllers import ParametersEditor
+from sequence_plotter_widget import sequence_plotter_button_widget
 
 class script_scanner_gui(QtWidgets.QWidget):
 
@@ -13,6 +11,7 @@ class script_scanner_gui(QtWidgets.QWidget):
 
     def __init__(self, reactor, cxn=None):
         super(script_scanner_gui, self).__init__()
+        self.selected_experiment = ''
         self.cxn = cxn
         self.reactor = reactor
         self.setupWidgets()
@@ -91,6 +90,25 @@ class script_scanner_gui(QtWidgets.QWidget):
             self.scripting_widget.addScheduled(ident, name, duration)
         for ident, name in running:
             self.scripting_widget.addRunning(ident, name)
+#reload experiment
+    @inlineCallbacks
+    def reloadExperiments(self):
+        sc = yield self.cxn.get_server('ScriptScanner')
+        self.scripting_widget.clear_all()
+        yield sc.reload_available_scripts()
+        available = yield sc.get_available_scripts(context=self.context)
+        queued = yield sc.get_queue(context=self.context)
+        running = yield sc.get_running(context=self.context)
+        scheduled = yield sc.get_scheduled(context=self.context)
+        for experiment in available:
+            self.scripting_widget.addExperiment(experiment)
+        for ident, name, order in queued:
+            self.scripting_widget.addQueued(ident, name, order)
+        for ident, name, duration in scheduled:
+            self.scripting_widget.addScheduled(ident, name, duration)
+        for ident, name in running:
+            self.scripting_widget.addRunning(ident, name)
+
 
     @inlineCallbacks
     def populateParameters(self):
@@ -232,27 +250,43 @@ class script_scanner_gui(QtWidgets.QWidget):
         self.scripting_widget.on_scan.connect(self.scan_script)
         # parameter widget
         self.ParametersEditor.on_parameter_change.connect(self.on_new_parameter)
-
+#changed by Fred: Remove feature of measure_script so that we can have space to do 2D scan
     @inlineCallbacks
-    def scan_script(self, scan_script, measure_script, parameter, minim, maxim,
+    def scan_script(self, scan_script, extra_scan_para, parameter, minim, maxim,
                     steps, units):
         scan_script = str(scan_script)
-        measure_script = str(measure_script)
+        measure_script = str(scan_script)#str(measure_script)
+        #print(type(extra_scan_para))
         collection, parameter_name = parameter
+        #print(parameter)
         steps = int(steps)
         units = str(units)
         sc = yield self.cxn.get_server('ScriptScanner')
-        try:
-            yield sc.new_script_scan(scan_script, measure_script, collection,
+        if str(extra_scan_para)=="":
+            try:
+                yield sc.new_script_scan(scan_script, measure_script, collection,
                                      parameter_name, minim, maxim, steps,
                                      units)
-        except self.Error as e:
-            self.displayError(e.msg)
+            except self.Error as e:
+                self.displayError(e.msg)
+        else:
+            parameter_list = [parameter]
+            extra_collection, extra_parameter_name = extra_scan_para.split(":")
+            parameter_list.append((extra_collection[:-1], extra_parameter_name[1:]))
+            try:
+                yield sc.new_nd_script_scan(scan_script, measure_script, parameter_list, minim, maxim, steps,
+                                     units)
+            except self.Error as e:
+                self.displayError(e.msg)
+
 
     @inlineCallbacks
     def on_experiment_selected(self, selected_experiment):
         sc = yield self.cxn.get_server('ScriptScanner')
         selected_experiment = str(selected_experiment)
+        #change by fred for sequence plotter: add a field of selected experiment for seq plotter for reference
+        #also initiate at the first line for creating an empty string
+        self.selected_experiment = selected_experiment
         if selected_experiment:
             try:
                 parameters = yield sc.get_script_parameters(selected_experiment)
@@ -270,6 +304,7 @@ class script_scanner_gui(QtWidgets.QWidget):
         try:
             yield pv.set_parameter(path[0], path[1], value, True,
                                    context=self.context)
+            yield pv.save_parameters_to_registry()
         except self.Error as e:
             self.displayError(e.msg)
         except Exception as e:
@@ -367,11 +402,17 @@ class script_scanner_gui(QtWidgets.QWidget):
 
     def setupWidgets(self):
         self.scripting_widget = scripting_widget(self.reactor, self)
+        self.scripting_widget.setFixedHeight(670)
         self.ParametersEditor = ParametersEditor(self.reactor)
+        self.ParametersEditor.setFixedHeight(670)
+        self.sequence_plotter = sequence_plotter_button_widget(self)
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.scripting_widget)
         layout.addWidget(self.ParametersEditor)
-        self.setLayout(layout)
+        hlayout = QtWidgets.QVBoxLayout()
+        hlayout.addLayout(layout)
+        hlayout.addWidget(self.sequence_plotter)
+        self.setLayout(hlayout)
         self.setWindowTitle('Script Scanner Gui')
 
     def displayError(self, text):

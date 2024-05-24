@@ -3,6 +3,7 @@ from twisted.internet.defer import Deferred, DeferredList
 from six import itervalues, iteritems
 import sys
 sys.path.append('../../config')
+sys.path.append('../')
 import scriptscanner_config as sc_config
 
 from twisted.internet.task import LoopingCall

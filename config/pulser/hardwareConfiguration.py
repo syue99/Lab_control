@@ -108,8 +108,14 @@ class hardwareConfiguration(object):
     remoteChannels = {
     }
     ddsDict = {
-        '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),
-        '1092 Double Pass': ddsConfiguration(1, (0.0, 800.0), (-48.0, -6.0), 340, -9.0),
+        'DDS1': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 150, -15),
+        'DDS2': ddsConfiguration(1, (0.0, 800.0), (-48.0, -6.0), 340, -48.0),
+        'DDS3': ddsConfiguration(2, (0.0, 800.0), (-48.0, 3.0), 220.0, -48.0),
+        'DDS4': ddsConfiguration(3, (0.0, 800.00), (-48.0, 3.0), 300.0, -48.0),
+        'DDS5': ddsConfiguration(4, (0.0, 800.0), (-48.0, 3.0), 200.0, -48.0),
+        'DDS6': ddsConfiguration(5, (0.0, 800.0), (-48.0, 3.0), 200.0, -48.0),
+        'DDS7': ddsConfiguration(6, (0.0, 800.0), (-48.0, 3.0), 80.0, -48.0),
+        'DDS8': ddsConfiguration(7, (0.0, 800.0), (-48.0, 3.0), 2.0, -48.0),
     }
     '''ddsDict = {
         '422 Double Pass': ddsConfiguration(0, (0.0, 800.0), (-48.0, -1.0), 25, -2),

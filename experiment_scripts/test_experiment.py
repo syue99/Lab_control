@@ -13,18 +13,27 @@ import time
 import numpy as np
 import sys
 sys.path.append("../servers/script_scanner/")
+#sys.path.append("../pyqt5_clients/Labrad_script_scanner/script_scanner/")
+
 from scan_experiment_1D import scan_experiment_1D
+from single_sequence import single_sequence
 from experiment import experiment
 from twisted.internet.threads import deferToThread
 import msvcrt
 
+
+###Avaliable varaibles to scan:
+#e.g. time1(doppler cooling time), time2(mot loading time), freq(doppler cooling freq), etc... 
+#we will need to at least view it in the GUI and change it in script
+#better if we can change it in GUI
+#med-high priority for 2D scan
 
 scan_var = 'time'
 #scan_var = 'freq'
 
 
 Scan_points = 60
-repetitions_every_point=50
+repetitions_every_point=10
 
 if scan_var == 'time':
     Scan_points = 10
@@ -65,12 +74,26 @@ class NIcard_scan(experiment):
     
     #you program the experimental sequence here
     #unit in ms, you will need to change the time to the correct para if you scan freq and vice versa
-    def program_main_sequence(self, scantime ):
-        self.TTL.pulseon(0,0,scantime)
+    def program_main_sequence(self, scanvalue=0 ):
+        #self.TTL.pulseon(0,0,scanvalue)
+        #self.TTL.pulseon(0,0,1e-6)
+        for counter in range(3):
+            self.TTL.pulseon(0,(1+counter )*1e-4, 1e-6)
+            self.TTL.pulseon(1,counter *2e-5, 1e-5)
+            self.TTL.pulseon(2,counter *1e-5+1e-5, 1e-6 )
+        self.TTL.pulseon(1,2e-4,4e-4)
+        #print("Newexp1")
 
+        self.ao.setvoltagepulse(2,0,1e-4,WithUnit(2,"V"))
+        self.ao.setvoltagepulse(2,2e-4,4e-4,WithUnit(5,"V"))
+        self.ao.setVoltagePulse(1,2e-5,1e-4,WithUnit(1.5,"V"))
+        self.ao.setVoltagePulse(0,2e-5,1e-4,WithUnit(2,"V"))
     def initialize(self, cxn, context, ident):
         try:
             self.TTL = self.cxn.finitedopulses
+            self.ao = self.cxn.aoserver
+            self.TTL.blankwaveform(10e-4)
+            self.ao.blankwaveform(10e-4)
         except Exception as e:
             print(e)
         print('init, set up pulser')
@@ -86,14 +109,23 @@ class NIcard_scan(experiment):
         #you can program the sequence in the program_main_sequence function
 
         if scan_var == 'time':
-            self.program_main_sequence(scantime = scanvalue['s'])
-
-        self.TTL.runwaveform(repetitions_every_point)
-
+            self.program_main_sequence(scanvalue = scanvalue['s'])
+        #print(repetitions_every_point)
+        self.ao.runwaveform(10)
+        self.TTL.runwaveform(10)
+        
+        self._loopWhileRunWaveform()
         return [0,0]
         
+        
 
-
+    def _loopWhileRunWaveform(self):
+        scanTime = 0.1
+        time_start = time.time()
+        runCounter = -1
+        while (time.time() - time_start) < (scanTime + 0.1):
+            pass
+                
     def finalize(self, cxn, context):
         print('finalize')
 
@@ -105,6 +137,8 @@ if __name__ == '__main__':
     ###: you set the scan freqeuncy and data points needed here
     if scan_var=='time':
         exprt = scan_experiment_1D(NIcard_scan, parameter, scan_time_start['ms'], scan_time_end['ms'], Scan_points, 'ms')
+    else:
+        exprt = single_sequence(NIcard_scan)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 

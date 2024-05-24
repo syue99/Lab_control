@@ -13,6 +13,7 @@ class experiment(experiment_info):
     def __init__(self, name=None, required_parameters=None, cxn=None,
                  min_progress=0.0, max_progress=100.0,):
         required_parameters = self.all_required_parameters()
+        print(required_parameters)
         super(experiment, self).__init__(name, required_parameters)
         self.cxn = cxn
         self.pv = None
@@ -27,22 +28,22 @@ class experiment(experiment_info):
             try:
                 self.cxn = labrad.connect()
             except Exception as error:
-                error_message = error + '\n' + "Not able to connect to LabRAD"
+                error_message = str(error) + '\n' + "Not able to connect to LabRAD"
                 raise Exception(error_message)
         try:
             self.sc = self.cxn.servers['ScriptScanner']
         except KeyError as error:
-            error_message = error + '\n' + "ScriptScanner is not running"
+            error_message = str(error) + '\n' + "ScriptScanner is not running"
             raise KeyError(error_message)
         try:
             self.pv = self.cxn.servers['ParameterVault']
         except KeyError as error:
-            error_message = error + '\n' + "ParameterVault is not running"
+            error_message = str(error) + '\n' + "ParameterVault is not running"
             raise KeyError(error_message)
         try:
             self.context = self.cxn.context()
         except Exception as error:
-            error_message = error + '\n' + "self.cxn.context is not available"
+            error_message = str(error) + '\n' + "self.cxn.context is not available"
             raise Exception(error_message)
 
     def execute(self, ident):
@@ -71,6 +72,29 @@ class experiment(experiment_info):
 
     def _run(self, cxn, context):
         self.run(cxn, context)
+
+    """def execute_sequence(self, ident):
+        #changed by Fred
+        #Executes the experiment without running it
+        self.ident = ident
+        try:
+            self._connect()
+            self._initialize(self.cxn, self.context, ident)
+            self._program_main_sequence(1e-6)
+            self._finalize(self.cxn, self.context)
+        except Exception as e:
+            reason = traceback.format_exc()
+            print(reason)
+            if hasattr(self, 'sc'):
+                self.sc.error_finish_confirmed(self.ident, reason)
+        finally:
+            if hasattr(self, 'cxn'):
+                if self.cxn is not None:
+                    self.cxn.disconnect()
+                    self.cxn = None"""
+
+    #def _program_main_sequence(self, value):
+    #    self.program_main_sequence(value)
 
     def _load_required_parameters(self, overwrite=False):
         d = self._load_parameters_dict(self.required_parameters)
@@ -148,3 +172,8 @@ class experiment(experiment_info):
 
     def finalize(self, cxn, context):
         """Implemented by the subclass."""
+
+
+
+
+
