@@ -7,6 +7,8 @@ sys.path.append("../servers/script_scanner/")
 #IMPORT PHASES
 from setBFieldsMOT import setBFieldsMOT
 from loadMOT import loadMOT
+from imaging import imaging
+from absorption_imaging import absorption_imaging
 from experiment_phases import experiment_phases, S, P
 
 from labrad.units import WithUnit
@@ -32,7 +34,8 @@ if scan_var == 'time':
     Scan_points = 5
     scan_time_start=WithUnit(0.0,'ms')
     scan_time_end=WithUnit(0.3,'ms')
-    parameter= [("loadMOT", "MOTLoadTime_scan"),("loadMOT", "pushBeamPower_mW_scan")]
+    #parameter= [("loadMOT", "MOTLoadTime_scan"),("loadMOT", "pushBeamPower_mW_scan")]
+    parameter = [("absorption_imaging", "image_time")]
 
 #timeZero = time.time()
 #cxn = labrad.connect()
@@ -48,14 +51,18 @@ if scan_var == 'time':
 #savedir = "./test"
 
 def exp_sequence():
-    return S(setBFieldsMOT(),loadMOT())
+    return S(absorption_imaging())
 
 
 
 
-class rydberg_experiment(experiment_phases):
+
+
+
+
+class absorption_imaging_experiment(experiment_phases):
     #for all parameters that are used in the experiment but not in the phases included
-    required_parameters = [("general","nLoops"), ("general","nExperimentsPerLoop"), ("general","verbose"), ("general","seqlen"),("loadMOT","MOTLoadTime_scan"),("loadMOT",'pushBeamPower_mW_scan')]
+    required_parameters = [("general","nLoops"), ("general","nExperimentsPerLoop"), ("general","verbose"), ("general","seqlen"),("absorption_imaging", "image_time"),("absorption_imaging", "imaging_delay")]
     first = None
     phases = None
     last = None
@@ -87,6 +94,7 @@ class rydberg_experiment(experiment_phases):
     @classmethod
     def _load_parameters_before_init(cls):
         cls.phases, cls.first, cls.last,required_parameters = exp_sequence()
+        #print(cls.first)
         return required_parameters
     
 
@@ -95,8 +103,8 @@ if __name__ == '__main__':
     scanner = cxn.scriptscanner
     ###: you set the scan freqeuncy and data points needed here
     if scan_var=='time':
-        exprt = scan_experiment(rydberg_experiment, parameter, scan_time_start['s'], scan_time_end['s'], Scan_points, 's')
+        exprt = scan_experiment(absorption_imaging, parameter, scan_time_start['s'], scan_time_end['s'], Scan_points, 's')
     else:
-        exprt = single_sequence(rydberg_experiment)
+        exprt = single_sequence(absorption_imaging)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)

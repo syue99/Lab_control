@@ -37,7 +37,7 @@ class scan_experiment_1D(experiment):
         for i, scan_value in enumerate(self.scan_points):
             if self.pause_or_stop():
                 return
-            #changed by Fred, only a sketchy fix, need to be fixed later
+            #TODO: changed by Fred, only a sketchy fix, need to be fixed later
             self.script.set_parameters({('para1',"para2"): scan_value})
             self.script.set_progress_limits(
                 100.0 * i / len(self.scan_points), 100.0 * (i + 1) / len(self.scan_points))

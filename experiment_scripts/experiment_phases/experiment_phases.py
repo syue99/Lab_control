@@ -27,12 +27,17 @@ class experiment_phases(experiment):
     parameter_name = "exp_base"
     scanpara_names = []
     USEPMT = False
+    USEDDS = True
     
     
     @classmethod
     def all_required_parameters(cls):
         pass
     
+    #we use this function to get the directory for saving data, as it is tied with the experiment performed time
+    def get_dir(self,dirc):
+        self.dir = dirc
+
     def _find_seq_length(self):
             # now find the total duration of the sequencey by looking at the last phases
         self.tend = 0
@@ -44,6 +49,7 @@ class experiment_phases(experiment):
         self.phases_flat = list(flatten(self.phases))
         self.phases_flat_sorted = [self.phases_flat[x] for x in
                                     np.argsort([p.tstart for p in self.phases_flat], kind='stable')]
+        print(self.phases_flat_sorted)
         self.parameters['general']['seqLen'] = self.tend
 
 
@@ -53,7 +59,7 @@ class experiment_phases(experiment):
         # this will run getlength() exactly once for each phase
         for p in self.first:
             print(p)
-            p.setup(self.parameters)
+            p.setup(self.parameters,self.cxn)
 
         # now find the total duration of the sequencey by looking at the last phases
         self._find_seq_length()
@@ -77,7 +83,10 @@ class experiment_phases(experiment):
 
     def _run_before(self):
         """ Stuff that needs to run before dophases(), ie initializting servers, generators, etc """
-        #self._initCountersAndConstants(True)     njmjjjjjjjjjjjjjjjjnu
+
+
+
+        #self._initCountersAndConstants(True)    
         # self._waitPvcam(True)
 
         # print('Align trap')
@@ -136,8 +145,8 @@ class experiment_phases(experiment):
         """ Actually start the sequence, and wait for it to finish """
         #print(self.params)
         print('run waveforms, number of loops:', self.parameters['general']['nLoops'])
-        self.cxn.aoserver.runwaveform(self.parameters['general']['nLoops'])
-        self.cxn.finitedopulses.runwaveform(self.parameters['general']['nLoops'])
+        self.cxn.aoserver.runwaveform(int(self.parameters['general']['nLoops']))
+        self.cxn.finitedopulses.runwaveform(int(self.parameters['general']['nLoops']))
 
         self._loopWhileRunWaveform()
 
@@ -168,15 +177,21 @@ class experiment_phases(experiment):
     
 
     def initialize(self, cxn, context, ident):
+        #basic instruments(e.g. NI cards, Pulsers) that intialization not depend on phase will be initialized here
         try:
             self.TTL = self.cxn.finitedopulses
             self.ao = self.cxn.aoserver
-            self.TTL.blankwaveform()
-            self.ao.blankwaveform(3e-4)
+            self.pulser = self.cxn.pulser
+            #self.TTL.blankwaveform()
+            #self.ao.blankwaveform(3e-4)
         except Exception as e:
             print(e)
         print('init, set up pulser')
         # self.reset()
+        
+        #instruments that initialization are phase dependent (e.g. camera, SLM) will be defined in the phase and excuted here
+        #TODO: Some functions (e.g. initialize_cam) should only excute once (maybe should be put in setup)
+        #while some functions (e.g. wait_pvcam) should be put here as _initialize will excute every time
         self._initialize()
         # flatten phases and generate sorted list
         # self.plot_phase_graph()
@@ -198,6 +213,12 @@ class experiment_phases(experiment):
         #analyze scanpara
         #we want to trace down the scanpara and update it locally
         #print(self.parameters[self.scanpara_names[0][0]][self.scanpara_names[0][1]])
+        # Import the time library
+
+
+    # Calculate the start time
+        start = time.time()
+        print(start)
         for i in range(len(scanpara_list)):
             scan_unit = scanpara_list[i].units
             self.parameters[self.scanpara_names[i][0]][self.scanpara_names[i][1]] = scanpara_list[i][scan_unit]
@@ -210,6 +231,9 @@ class experiment_phases(experiment):
         which should be used to generate filenames but also to save any automatic analysis results. """
         self._run_before()
         self._run_after()
+        end = time.time()
+        print("D")
+        print( end - start)
         self._run_wait()
         self._run_cleanup()
         val = self._run_analysis()
@@ -221,6 +245,9 @@ class experiment_phases(experiment):
         #new_result.update(keys)
         #new_result['value'] = val
         #self.results.append(new_result)
+        end = time.time()
+        print("F")
+        print( end - start)
         return [0,0]
         #return[scanpara_list[0][scan_unit],0]
 
@@ -300,6 +327,69 @@ class experiment_phases(experiment):
         plt.show()
 
 
+
+
+    ##necessary utility functions for the phases
+
+    def _setNICardFinalStates(self):
+        pass
+
+    def _setUpCameras(self):
+        
+        self.cxn.pvcamNuvuRfsocServer.acquireFastSequence(self.parameters["imaging"]['save_dir'],self.parameters["imaging"]["save_params"],int(self.parameters["general"]['nLoops']))
+        #    self.prefix,
+        #    getSaveName(self.params, self.params['saveParams']),
+        #    self.params['nLoops'])
+        #PREFIX: directory to save results
+
+        acquistionStatus = self.cxn.pvcamNuvuRfsocServer.isAcquisitionReady()
+        acquistionWaitIndex = 0
+        while (acquistionStatus == False or acquistionWaitIndex > 60):
+            time.sleep(1)
+            acquistionStatus = self.cxn.pvcamNuvuRfsocServer.isAcquisitionReady()
+            acquistionWaitIndex += 1
+            print('wait {:.1f}s for acquistion to get ready'.format(acquistionWaitIndex))
+        if acquistionStatus == False:
+            raise Warning('pvcamNuvuRfsocServer might have stuck. Check the server (acquisition)')
+
+    def _setPvcam(self, exposure_time):
+        #intialization part, does not need to run while scanning or repeating a sequence
+        exposure_time = 60e-3
+        cxn.pvcamNuvuRfsocServer.initPvCam([ROIleft,ROItop,ROIwidth,ROIheight],WithUnit(exposure_time, 's')) #ROI: [x0,y0,len,len] and exposure time
+
+        #clear previous sequence
+        cxn.pvcamNuvuRfsocServer.clearSequence()
+        #image status decide if the previous programmed sequence is finished or not
+        imageStatus = cxn.pvcamNuvuRfsocServer.isSequenceFinished()
+        #@@@@a timer for 60s
+        imageWaitIndex = 0
+        while (imageStatus == 0 or imageWaitIndex > 60):
+            time.sleep(1)
+            imageStatus = cxn.pvcamNuvuRfsocServer.isSequenceFinished()
+            imageWaitIndex += 1
+            print('wait {:.1f}s for image to finish'.format(imageWaitIndex))
+        if imageStatus == False:
+            raise Warning('pvcamNuvuRfsocServer might have stuck. Check the server')
+
+        #Here will need to change between cycles as some of the parameter (e.g. timing can change)
+        #but I think a lot of time the inst_lst is the same, so it is also possible to put it in the previous sec
+
+        #generate a instruction list: simplest now set to just take one image and save it somewhere
+        ### @@@@
+        inst_lst = _parseInstructions()
+
+        if type(inst_lst) == dict:
+            inst_lst = [inst_lst]
+        elif type(inst_lst) is not list:
+            raise ValueError('Instructions of imaging phase needs to be a list of dicts')
+        cxn.pvcamNuvuRfsocServer.acquireImage('pvcam')
+        for istr in inst_lst:
+            cxn.pvcamNuvuRfsocServer.process(jsonize(istr))
+
+    def _makeSaveDir(self, path):
+        pass
+
+
 def S(*in_phases):
     """This accepts a list of phases or S(), P() function calls, and
     installs the correct forward and backward connections among the phases to
@@ -316,9 +406,11 @@ def S(*in_phases):
     prev_phase = (None,)
 
     for p in in_phases:
-        if isinstance(p, phase):
+        print(isinstance(p, phase))
 
+        if isinstance(p, phase):
             phases.append(p)
+            print(phases)
             required_parameters += p.required_parameters()
             p.prev_phase = prev_phase
 
@@ -464,3 +556,6 @@ def flatten(items):
                 yield sub_x
         else:
             yield x
+
+
+

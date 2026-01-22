@@ -1,6 +1,7 @@
 import traceback
 import labrad
 from treedict import TreeDict
+import numpy as np
 from six import iteritems
 #sys.path.append('/')
 from experiment_info import experiment_info
@@ -13,7 +14,7 @@ class experiment(experiment_info):
     def __init__(self, name=None, required_parameters=None, cxn=None,
                  min_progress=0.0, max_progress=100.0,):
         required_parameters = self.all_required_parameters()
-        print(required_parameters)
+        #print(required_parameters)
         super(experiment, self).__init__(name, required_parameters)
         self.cxn = cxn
         self.pv = None
@@ -106,6 +107,13 @@ class experiment(experiment_info):
         for collection, parameter_name in params:
             try:
                 value = self.pv.get_parameter(collection, parameter_name)
+                #make sure list objects are converted to lists
+                if isinstance(value, str):
+                    if value[0]=="[":
+                        try:
+                            value = np.fromstring(value[1:-1], dtype=float, sep=",")
+                        except:
+                            value = value[1:-1].split(",")
             except Exception as e:
                 print(e)
                 message = "In {}: Parameter {} not found among Parameter Vault parameters"
@@ -141,6 +149,7 @@ class experiment(experiment_info):
         self.finalize(cxn, context)
         self.sc.finish_confirmed(self.ident)
 
+##Used by sc when scanning
     # useful functions to be used in subclasses
     @classmethod
     def all_required_parameters(cls):
@@ -162,6 +171,8 @@ class experiment(experiment_info):
     def set_progress_limits(self, min_progress, max_progress):
         self.min_progress = min_progress
         self.max_progress = max_progress
+
+
 
     # functions to reimplement in the subclass
     def initialize(self, cxn, context, ident):

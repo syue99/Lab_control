@@ -151,7 +151,7 @@ class ScriptScanner(ScriptSignalsServer):
                 try:
                     name = cls.name
                     parameters = cls.all_required_parameters()
-                    print(parameters)
+                    #print(parameters)
                 except AttributeError:
                     name_not_provided = 'Name is not provided for class {0} in'
                     name_not_provided += ' module {1}'

@@ -36,7 +36,7 @@ if not "%JAVA_HOME%" == "" goto OkJHome
 
 for /f %%j in ("java.exe") do (
 
-  set JAVA_EXE="C:\Program Files (x86)\Common Files\Oracle\Java\javapath\java.exe"
+  set JAVA_EXE="C:\Program Files (x86)\Common Files\Oracle\Java\java8path\java.exe"
   echo %%~$PATH:j
   goto init
   ECHO Congratulations! Your first batch file executed successfully.

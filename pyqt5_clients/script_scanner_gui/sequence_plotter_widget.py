@@ -9,10 +9,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 
 from TraceListWidget import TraceList
+sys.path.append("../../config")
+import scriptscanner_config as sc_config
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 from pyqt4_clients.connection import connection
-#import labrad
 from twisted.internet.defer import inlineCallbacks
 
 
@@ -35,6 +36,7 @@ class sequence_plotter_button_widget(QtWidgets.QWidget):
         super(sequence_plotter_button_widget, self).__init__()
         self.sc_gui  = script_scanner_gui
         self.cxn = self.sc_gui.cxn
+        #self.pulse_/
         self.artist_ttl_channel= []
         self.artist_ao_channel = []
         self.artists = {}
@@ -59,7 +61,7 @@ class sequence_plotter_button_widget(QtWidgets.QWidget):
 
     def setup_layout(self):
         # Create a QPushButton
-        self.button = QtWidgets.QPushButton('Click me!', self)
+        self.button = QtWidgets.QPushButton('Plot Seq', self)
         # Figure
         self.figure = Figure(figsize=(100,7.2), dpi=80, facecolor='k')
         self.plotWidget = FigureCanvas(self.figure)     
@@ -88,10 +90,17 @@ class sequence_plotter_button_widget(QtWidgets.QWidget):
         layout.addLayout(hlayout)
         self.setLayout(layout)
         # add artist for the channel
-        for i in range(0,10):
-            self.add_artist("TTL_"+str(i),0,i,0)
-        for i in range(2):
-            self.add_artist("AO_"+str(i),1,i,0)
+        # Name, type(0 ttl, 1 AO), real channel, index for display or not
+        # We will load from the config file in lab_control\config\scriptscanner_config.py
+        
+        # for i in range(0,30):
+        #     self.add_artist("TTL_"+str(i),0,i,0)
+        # for i in range(10):
+        #     self.add_artist("AO_"+str(i),1,i,0)
+        for i in sc_config.TTL_dict.keys():
+            self.add_artist("TTL: "+sc_config.TTL_dict[i],0,i,0)
+        for i in sc_config.AO_dict.keys():
+            self.add_artist("AO: "+sc_config.AO_dict[i],1,i,0)
 
 #Other functions
     @inlineCallbacks
@@ -113,7 +122,7 @@ class sequence_plotter_button_widget(QtWidgets.QWidget):
         try:
         #Fred
         #recompile data into Cicero style, probably better to be a class later
-        #ttk_data is 100ns bins, so this is xCoords for us bins
+        #ttl_data is 100ns bins, so this is xCoords for us bins
         #ao_data is 4us bins, we will normalize the ao_data time bin, ao time zone is 40 times larger
         # we only record xCoords where there is a change
         # we will combine the xCoords with TTL and AO, but the AO will listen to the Ao xCoords for displaying shapes
@@ -232,13 +241,13 @@ class sequence_plotter_button_widget(QtWidgets.QWidget):
         numPlots = 0
         self.axes2.cla()
         for pulse in ttl_data:
-            self.axes2.step(range(len(t)),pulse+1.5*numPlots-4,where='post',label="ttl "+str(self.artist_ttl_channel[numPlots]))
+            self.axes2.step(range(len(t)),pulse+1.5*numPlots-4,where='post',label=sc_config.TTL_dict[self.artist_ttl_channel[numPlots]])
             self.axes2.fill_between(x= range(len(t)), y1=1.5*numPlots-4 ,y2=pulse+1.5*numPlots-4,step='post')
             numPlots+=1
         if ao_data != None:
             numPlots = 0
             for counter in range(len(ao_data)):
-                self.axes2.step(ao_t[counter],ao_data[counter],where='post',label="ao "+str(self.artist_ao_channel[numPlots]))
+                self.axes2.step(ao_t[counter],ao_data[counter],where='post',label=sc_config.AO_dict[self.artist_ao_channel[numPlots]])
                 self.axes2.fill_between(x= ao_t[counter],y1=ao_data[counter],y2=0, alpha=0.3, step='post')#interpolate=True)
                 numPlots+=1
         

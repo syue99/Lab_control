@@ -59,6 +59,8 @@ class PvcamNuvuRfsocServer(LabradServer):
     def _initPvCamera(self, roi, exposureTime):
         if self.camDriver['pvcam'] is None:
             self.camDriver['pvcam'] = PvcamDriver()
+
+
         self.camDriver['pvcam'].setROI(roi[0], roi[1], roi[2], roi[3])
         self.camDriver['pvcam'].setExposure(exposureTime)
         self.detectionParam['pvcam'] = miscFn.updateDetectionParameters('pvcam')
@@ -214,7 +216,7 @@ class PvcamNuvuRfsocServer(LabradServer):
         self.resDict = {'pvcam': {}, 'nuvu': {}}
         print('Ready to acquire images.')
         self.acquisitionReady = 1
-        print(self.imageQueue)
+        #print(self.imageQueue)
         for numLoop in range(nLoops):
 
             imageCounterCamWise = {cam: 0 for cam in camRequired}
@@ -241,24 +243,34 @@ class PvcamNuvuRfsocServer(LabradServer):
                 if saveRawImageFlag:
                     stack[cameraType][numLoop * self.imageCounts[cameraType] + imageIndexCam] = rawImage
                 imageCounterCamWise[cameraType] += 1
-            tTrans1 = time.time()
-            self.globalImageData.clear()
-            self.globalImageData.update({cam: stack[cam][(numLoop * self.imageCounts[cam]):(
-                            numLoop * self.imageCounts[cam] + self.imageCounts[cam])] for cam in camRequired})
-            self.globalResults.clear()
-            self.globalResults.update(self.resDict)
-            self.globalResults.update({'runNumber': os.path.normpath(fileDirectory).split(os.path.sep)[-1]})
-            self.globalResults.update({'fileName': fileName})
-            self.globalResults.update({'imageQueue': self.imageQueue})
-            self.newdatain.value = 1
-            print('Tranfer data to GUI takes {:.5f} s'.format(time.time()-tTrans1))
+            ###@@@commented by FRED for saving time    
+            # tTrans1 = time.time()
+            # self.globalImageData.clear()
+            # self.globalImageData.update({cam: stack[cam][(numLoop * self.imageCounts[cam]):(
+            #                 numLoop * self.imageCounts[cam] + self.imageCounts[cam])] for cam in camRequired})
+            # self.globalResults.clear()
+            # self.globalResults.update(self.resDict)
+            # self.globalResults.update({'runNumber': os.path.normpath(fileDirectory).split(os.path.sep)[-1]})
+            # self.globalResults.update({'fileName': fileName})
+            # self.globalResults.update({'imageQueue': self.imageQueue})
+            # self.newdatain.value = 1
+            # print('Tranfer data to GUI takes {:.5f} s'.format(time.time()-tTrans1))
             print('Executed ' + str(os.path.normpath(fileDirectory).split(os.path.sep)[-1]) +
                   ', Loop #' + str(numLoop) + '...')
 
         for cam in camRequired:
-            print(stack[cam])
+            #print(stack[cam])
             print(os.path.join(fileDirectory, cam, fileName + '.mat'))
             savemat(os.path.join(fileDirectory, cam, fileName + '.mat'), {'stack': stack[cam]}, do_compression=True)
+
+        # for cam in camRequired:
+        #     print(stack[cam])
+        #     print(os.path.join(fileDirectory, cam, fileName + '.npz'))
+            
+        #     np.savez_compressed(
+        #         os.path.join(fileDirectory, cam, fileName + '.npz'),
+        #         stack=stack[cam]
+        #     )
 
         print('Done saving.')
         self.sequenceStatus = 1

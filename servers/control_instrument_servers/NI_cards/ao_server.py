@@ -25,13 +25,16 @@ class AOServer(LabradServer):
     nCh = 28
     targetSampleRate = 250e3
 
-    channel_string = "PXI1Slot2/ao0:27"
+    channel_string = "PXI1Slot2_2/ao0:27"
 
     def initServer(self):
         self.sampleClockDivider = int(round(1e7 / self.targetSampleRate))
         self.sampleRate = 1e7 / self.sampleClockDivider
         print("Initializing AO server. Sample rate = %f Hz. Divider = %d" % (self.sampleRate, self.sampleClockDivider))
-        pass
+        self.internalClk = PyDAQmx.DAQmx_Val_SampleClock  # Source of the clock timing the output
+        self.internalTrig = PyDAQmx.DAQmx_Val_StartTrigger  # Source of the trigger to initiate the sequence
+        self.externalClk = '/PXI1Slot3_2/PXI_Trig7'  # Internal clock will be exported to here to sychronize other tasks
+        self.externalTrig = '/PXI1Slot3_2/PXI_Trig1'
 
     def stopServer(self):
         pass
@@ -56,7 +59,7 @@ class AOServer(LabradServer):
             print("AO17 is used for nuclear spin drive! NO CW mode!")
             return
 
-        chStr = 'PXI1Slot2/ao' + str(ch)
+        chStr = 'PXI1Slot2_2/ao' + str(ch)
 
         self.cleanupTask(c)
 
@@ -241,7 +244,10 @@ class AOServer(LabradServer):
         if ch == 17:
             print("AO17 is used for nuclear spin drive! NO CW mode!")
             return
-        self.data[ch][-1] = val['V']
+        for i in range(10):
+            self.data[ch][-i] = val['V']
+        #self.data[ch][-2] = val['V']
+        #print(val['V'])
 
     @setting(14, 'ArbWave', ch='i', t_start='v[]', t_len='v[]', ampList='*v', freqList='*v', phaseList='*v',
              pulseDuration='*v', waitTime='*v')
@@ -428,7 +434,7 @@ class AOServer(LabradServer):
         # Use commas to separate physical channel names and ranges in a list as follows:
         # Dev1/ai0, Dev1/ai3:6
         # Dev1/port0, Dev1/port1/line0:2
-
+        #print(self.data[0][-20:])
         self.numloops = numloops
 
         # print 'in runWaveform'
@@ -444,9 +450,9 @@ class AOServer(LabradServer):
         # int32 DAQmxCreateCOPulseChanTicks (TaskHandle taskHandle, const char counter[], const char nameToAssignToChannel[], const char sourceTerminal[], int32 idleState, int32 initialDelay, int32 lowTicks, int32 highTicks);
         self._check(
             PyDAQmx.DAQmxCreateCOPulseChanTicks(self.taskHandleClk,
-                                                "/PXI1Slot2/ctr0",
+                                                "/PXI1Slot2_2/ctr0",
                                                 "",
-                                                "/PXI1Slot2/PXI_Trig7",
+                                                "/PXI1Slot2_2/PXI_Trig7",
                                                 PyDAQmx.DAQmx_Val_Low,
                                                 0,
                                                 2,
@@ -464,13 +470,13 @@ class AOServer(LabradServer):
 
         # # int32 __CFUNC DAQmxSetCOCtrTimebaseSrc(TaskHandle taskHandle, const char channel[], const char *data);
         # self._check(PyDAQmx.DAQmxSetCOCtrTimebaseSrc(self.taskHandleClk,
-        #                                              '/PXI1Slot2/ctr0',
-        #                                              "/PXI1Slot2/PXI_Trig7"
+        #                                              '/PXI1Slot2_2/ctr0',
+        #                                              "/PXI1Slot2_2/PXI_Trig7"
         #                                              ))
 
         # int32 DAQmxCfgDigEdgeStartTrig (TaskHandle taskHandle, const char triggerSource[], int32 triggerEdge);
         self._check(PyDAQmx.DAQmxCfgDigEdgeStartTrig(self.taskHandleClk,
-                                                     '/PXI1Slot2/PXI_Trig1',  # source
+                                                     '/PXI1Slot2_2/PXI_Trig1',  # source
                                                      PyDAQmx.DAQmx_Val_Rising,  # activeEdge
                                                      ))
 
@@ -491,7 +497,7 @@ class AOServer(LabradServer):
 
         # int32 __CFUNC     DAQmxCfgSampClkTiming          (TaskHandle taskHandle, const char source[], float64 rate, int32 activeEdge, int32 sampleMode, uInt64 sampsPerChan);
         self._check(PyDAQmx.DAQmxCfgSampClkTiming(self.taskHandle,
-                                                  '/PXI1Slot2/Ctr0InternalOutput',  # source
+                                                  '/PXI1Slot2_2/Ctr0InternalOutput',  # source
                                                   ctypes.c_double(self.sampleRate),  # rate
                                                   PyDAQmx.DAQmx_Val_Rising,  # activeEdge
                                                   PyDAQmx.DAQmx_Val_FiniteSamps,  # sampleMode # continuous sampling
@@ -500,7 +506,7 @@ class AOServer(LabradServer):
 
         # int32 DAQmxCfgDigEdgeStartTrig (TaskHandle taskHandle, const char triggerSource[], int32 triggerEdge);
         # self._check(PyDAQmx.DAQmxCfgDigEdgeStartTrig(self.taskHandle,
-        #                                          '/PXI1Slot2/PXI_Trig1',  # source
+        #                                          '/PXI1Slot2_2/PXI_Trig1',  # source
         #                                          PyDAQmx.DAQmx_Val_Rising,  # activeEdge
         #                                          ))
 

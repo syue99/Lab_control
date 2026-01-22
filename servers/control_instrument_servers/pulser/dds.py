@@ -6,6 +6,20 @@ from labrad.units import WithUnit
 from errors import dds_access_locked
 from six import iteritems
 import numpy as np
+import time
+
+def stepped_range(A, B, C):
+    # normal stepping
+    if A>B:
+        C=-C
+    
+    arr = np.arange(A, B, C)
+    
+    # check if last element is already B
+    if (C > 0 and arr[-1] < B) or (C < 0 and arr[-1] > B):
+        arr = np.append(arr, B)
+    
+    return arr
 
 
 class DDS(LabradServer):
@@ -69,6 +83,21 @@ class DDS(LabradServer):
         #Changed by Fred to fit the DDS control program
         self.notifyOtherListeners(c, (name, 'frequency', frequency), self.on_dds_param)
         returnValue(frequency)
+    
+    @setting(50, "freqHop", name='s', frequency=['v[MHz]'])
+    def freqHop(self, c, name, frequency):
+        """We use this function to Hop between frequency without unlocking the PDH lock\n
+        The Windfreak server will hop by 300KHz setps by steps from its original frequency to the new frequency
+        """
+        #start_freq = WithUnit(self._getChannel(c, name).frequency,"MHz")
+        start_freq = yield self.frequency(c,name)  #somehow it cannot find channel
+        if np.abs(start_freq['Hz'] - frequency['Hz']) <20e3:
+            self.frequency(c,name,frequency)  
+        else:
+            freq_list = stepped_range(start_freq['Hz'],frequency['Hz'],20e3)
+            for freq_step in freq_list:
+                self.frequency(c,name,WithUnit(freq_step/1e6,"MHz"))  
+                time.sleep(10e-3)
 
     @setting(45, 'Add DDS Pulses', values=['*(sv[s]v[s]v[MHz]v[dBm]v[deg]v[MHz]v[dB])'])
     def addDDSPulses(self, c, values):

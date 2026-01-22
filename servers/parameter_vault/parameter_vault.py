@@ -18,7 +18,7 @@ timeout = 20
 from labrad.server import LabradServer, setting, Signal
 from twisted.internet.defer import inlineCallbacks
 from six import itervalues, iteritems
-
+from labrad.units import WithUnit
 
 class ParameterVault(LabradServer):
     """Data Server for storing ongoing experimental parameters."""
@@ -94,6 +94,16 @@ class ParameterVault(LabradServer):
             assert item[0] <= value <= item[1], parameter_bound.format(key[1])
             item[2] = value
             return (t, item)
+        elif t == 'string':
+            item = value
+            return (t, item)
+        elif t == 'scan':
+            scan_value_bound = "Scan max smaller than min"
+            assert value[0] <= value[1], scan_value_bound        
+            parameter_bound = "Range {} Out of Bound"
+            assert item[0][0] <= value[0] <= item[0][1], parameter_bound.format(key[1])
+            assert item[0][0] <= value[1] <= item[0][1], parameter_bound.format(key[1])
+            return (t, (item[0],(value[0],value[1],value[2]),item[2],value[3]))
         else:
             raise Exception("Can't save, not one of checkable types")
 
@@ -120,6 +130,16 @@ class ParameterVault(LabradServer):
         bad_selection = "Incorrect selection made in {}"
 
         if param_type == 'parameter' or param_type == 'duration_bandwidth':
+            try:
+                item, units = item
+            except:
+                assert item[0] <= item[2] <= item[1]
+                return item[2]
+            assert item[0] <= item[2] <= item[1], parameter_bound.format(key)
+            return WithUnit(item[2],units)
+        
+
+        elif param_type == 'duration_bandwidth':
             try:
                 item, units = item
             except:

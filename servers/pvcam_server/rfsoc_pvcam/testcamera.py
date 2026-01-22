@@ -71,4 +71,5 @@ class imaging():
 
 cxn = labrad.connect()
 image = imaging(cxn,"test")
+print(image)
 #image.dophase()

@@ -1,5 +1,6 @@
 from labrad.units import WithUnit
 class hardwareConfiguration(object):
+    AOM_freq = 125 #MHz
     model = "M3201A"
     chassis = 1
     slot = 2

@@ -404,12 +404,12 @@ class FiniteDOPulses(LabradServer):
 
         self.sampleRate = 1e7
         self.numChannels = 32
-        self.channel_string = "PXI1Slot3/line0:31"
+        self.channel_string = "PXI1Slot3_2/line0:31"
 
         self.internalClk = pydaqmx.DAQmx_Val_SampleClock  # Source of the clock timing the output
         self.internalTrig = pydaqmx.DAQmx_Val_StartTrigger  # Source of the trigger to initiate the sequence
-        self.externalClk = '/PXI1Slot3/PXI_Trig7'  # Internal clock will be exported to here to sychronize other tasks
-        self.externalTrig = '/PXI1Slot3/PXI_Trig1'  # Internal trigger will be exported here
+        self.externalClk = '/PXI1Slot3_2/PXI_Trig7'  # Internal clock will be exported to here to sychronize other tasks
+        self.externalTrig = '/PXI1Slot3_2/PXI_Trig1'  # Internal trigger will be exported here
 
     @setting(12, 'nPoints', returns='i')
     def nPoints(self, c):

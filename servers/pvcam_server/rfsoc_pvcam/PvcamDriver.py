@@ -13,7 +13,16 @@ class PvcamDriver:
         self.cam = next(Camera.detect_camera())  # Use generator to find first camera.
         self.cam.open()
 
-        #self.cam.exp_mode = 'Edge Trigger'  # 'Ext Trig Edge Rising'
+        #set up the mode information. currently hardcoded
+        #change trigger to exp mode
+        #internal trigger
+        #edge trigger
+        self.cam.exp_mode = 'Edge Trigger'  # 'Ext Trig Edge Rising'
+        #0 sensitivity
+        #1 speed
+        #2 dynmaic
+        self.cam.readout_port = 0#3#0
+
         self.cam.exp_out_mode = 'First Row'
         self.cam.exp_time = int(10)
         #FRED: DO NOT SET SPEED INDEX

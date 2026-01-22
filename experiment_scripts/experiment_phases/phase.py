@@ -17,7 +17,8 @@ class phase(object):
         for name in self.parameter_names:
             required_parameters.append((type(self).__name__,name))
         return required_parameters
-    def setup(self, params):
+    
+    def setup(self, params, cxn):
 
         # first, check if all the previous phases are done
         # and find the longest of the start + len to compute our tstart
@@ -41,12 +42,17 @@ class phase(object):
         self.tstart = tstart
         #change by Fred: we get the para names here to 
         self.tlen = self.getlength(params[type(self).__name__])
+        self._initialize(params[type(self).__name__], cxn)
         self.initialized = True
 
         # now try to set up the following phases:
         for pl in self.next_phase:
             if pl is not None:
-                pl.setup(params)
+                pl.setup(params,cxn)
+
+    def _initialize(self, params, cxn):
+    #used for initializations for instrument specificly used for this phase
+        pass
 
     def getlength(self, params):
         # compute length

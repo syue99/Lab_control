@@ -8,7 +8,7 @@ class pvcam_Config(object):
     set_temperature = -10 #degrees C
     read_mode = 'Image'
     acquisition_mode = 'Single Scan'
-    trigger_mode = 'Internal'
+    trigger_mode = 'Edge Trigger'
     exposure_time = 0.100 #seconds
     binning = [1, 1] #numbers of pixels for horizontal and vertical binning
     image_path = ('C:\\Users\\Cryo_rdyberg\\Desktop')

@@ -29,14 +29,13 @@ class scan_experiment(experiment):
             self.dim = 1
             self.parameter = parameter
             collection,name = self.parameter
-            #for every scan para we have parametername_scan, :-5 remove _scan so that we can change the parameter
-            self.script_cls.scanpara_names.append((collection,name[:-5]))
+            self.script_cls.scanpara_names.append((collection,name[:]))
         elif type(parameter)==list:
             self.dim = len(parameter)
             self.parameter = parameter
             collection,name = self.parameter[0]
             #for every scan para we have parametername_scan, :-5 remove _scan so that we can change the parameter
-            self.script_cls.scanpara_names.append((collection,name[:-5]))
+            self.script_cls.scanpara_names.append((collection,name[:]))
         else:
             raise Exception("format of parameters are not recognized")
         #ordered scan without CMD command
@@ -64,13 +63,13 @@ class scan_experiment(experiment):
             for i in range(1,self.dim):
                 collection,name = self.parameter[i]
                 #for every scan para we have parametername_scan, :-5 remove _scan so that we can change the parameter
-                self.script.scanpara_names.append((collection,name[:-5]))
+                self.script.scanpara_names.append((collection,name[:]))
                 #avoid overriding, might not be necessary
                 #print(collection,name)
                 min, max, step = self.script.parameters[collection][name]
                 #somehow we lose the units when getting this parameter, but it does not hurt the script
                 #TODO: somehow get back the unit here
-                unit = self.script.parameters[collection][name[:-5]].units
+                unit = self.script.parameters[collection][name[:]].units
                 self.steps_counter *=step
                 points = np.linspace(min, max, step)
                 self.extra_scan_points_list.append([WithUnit(pt, unit) for pt in points])
@@ -84,7 +83,7 @@ class scan_experiment(experiment):
                 if self.pause_or_stop():
                     return
                 #changed by Fred, only a sketchy fix, need to be fixed later
-                self.script.set_parameters({('para1',"para2"): scan_value})
+                #self.script.set_parameters({('para1',"para2"): scan_value})
                 self.script.set_progress_limits(
                     100.0 * i / scan_points_len, 100.0 * (i + 1) / scan_points_len)
                 result = self.script.run(cxn, context, [scan_value])
@@ -124,8 +123,11 @@ class scan_experiment(experiment):
                     if self.pause_or_stop():
                         return
                     #changed by Fred, only a sketchy fix, need to be fixed later
-                    self.script.set_parameters({('para1',"para2"): scan_value})
-                    self.script.set_progress_limits(
+                    #self.script.set_parameters({('para1',"para2"): scan_value})
+                    #print(100.0 * i / scan_points_len/extra_scan_len+ 100/extra_scan_len*counter)
+
+                    #original code is self.script.set_progress_limits, might be used for rsg
+                    self.set_progress_limits(
                     100.0 * i / scan_points_len/extra_scan_len+ 100/extra_scan_len*counter, 100.0 * (i + 1) / scan_points_len/extra_scan_len+ 100/extra_scan_len*counter)
                     result = self.script.run(cxn, context, [scan_value,*extra_scan_tuple])
                     if self.script.should_stop:
@@ -150,7 +152,7 @@ class scan_experiment(experiment):
                                 result = result[0]
                                 cxn.data_vault.add([scan_value[self.units], result], context=context)
                     self.update_progress(i)
-                    counter+=1
+                counter+=1
 
 #initialize the real simple grapher plot feature
     # pass array of independent and dependent as ["name","unit"]
